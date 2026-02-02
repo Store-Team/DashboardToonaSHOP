@@ -29,7 +29,27 @@ import {
   NotificationsNone as NotificationsIcon,
   HelpOutline as HelpIcon,
   Logout as LogoutIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Category as CategoryIcon,
+  LocalOffer as LocalOfferIcon,
+  People as PeopleIcon,
+  MoneyOff as MoneyOffIcon,
+  PersonOff as PersonOffIcon,
+  TrendingUp as TrendingUpIcon,
+  Receipt as ReceiptIcon,
+  WarningAmber as WarningAmberIcon,
+  Warehouse as WarehouseIcon,
+  Store as StoreIcon,
+  Inventory as InventoryIcon,
+  ExpandLess,
+  ExpandMore,
+  EventAvailable as EventAvailableIcon,
+  AttachMoney as AttachMoneyIcon,
+  History as HistoryIcon,
+  BarChart as BarChartIcon,
+  Inventory2 as Inventory2Icon,
+  Group as GroupIcon,
+  ShowChart as ShowChartIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -75,6 +95,10 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 const DashboardLayout: React.FC = () => {
   const [open, setOpen] = useState(true);
+  const [clientsOpen, setClientsOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [operationsOpen, setOperationsOpen] = useState(false);
+  const [statisticsOpen, setStatisticsOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,6 +109,50 @@ const DashboardLayout: React.FC = () => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Companies (Groups)', icon: <BusinessIcon />, path: '/groups' },
     { text: 'Payments & Subscriptions', icon: <PaymentIcon />, path: '/payments' },
+    { text: 'Plans', icon: <CategoryIcon />, path: '/plans' },
+    { text: 'Promo Codes', icon: <LocalOfferIcon />, path: '/promo-codes' },
+    { 
+      text: 'Clients', 
+      icon: <PeopleIcon />, 
+      hasSubmenu: true,
+      submenu: [
+        { text: 'Tous les Clients', path: '/clients' },
+        { text: 'Clients Débiteurs', icon: <MoneyOffIcon />, path: '/clients/debts' },
+        { text: 'Clients Inactifs', icon: <PersonOffIcon />, path: '/clients/inactive' }
+      ]
+    },
+    { text: 'Aperçu des Ventes', icon: <TrendingUpIcon />, path: '/sales' },
+    { text: 'Factures', icon: <ReceiptIcon />, path: '/invoices' },
+    { 
+      text: 'Inventaire', 
+      icon: <InventoryIcon />, 
+      hasSubmenu: true,
+      submenu: [
+        { text: 'Alertes Stocks', icon: <WarningAmberIcon />, path: '/inventory/alerts' },
+        { text: 'Stocks Entrepôts', icon: <WarehouseIcon />, path: '/inventory/warehouse' },
+        { text: 'Stocks Points de Vente', icon: <StoreIcon />, path: '/inventory/pos' }
+      ]
+    },
+    { 
+      text: 'Opérations', 
+      icon: <EventAvailableIcon />, 
+      hasSubmenu: true,
+      submenu: [
+        { text: 'Clôtures Journalières', icon: <EventAvailableIcon />, path: '/operations/closures' },
+        { text: 'Dépenses', icon: <AttachMoneyIcon />, path: '/operations/expenses' },
+        { text: 'Historique Stocks', icon: <HistoryIcon />, path: '/operations/stock-history' }
+      ]
+    },
+    { 
+      text: 'Statistiques', 
+      icon: <BarChartIcon />, 
+      hasSubmenu: true,
+      submenu: [
+        { text: 'Top Produits', icon: <Inventory2Icon />, path: '/statistics/top-products' },
+        { text: 'Top Clients', icon: <GroupIcon />, path: '/statistics/top-clients' },
+        { text: 'Analyses Ventes', icon: <ShowChartIcon />, path: '/statistics/sales-analytics' }
+      ]
+    },
   ];
 
   const handleLogout = () => {
@@ -161,30 +229,99 @@ const DashboardLayout: React.FC = () => {
       >
         <List sx={{ px: 1.5 }}>
           {menuItems.map((item) => (
-            <ListItem key={item.text} disablePadding sx={{ display: 'block', mb: 0.5 }}>
-              <ListItemButton
-                onClick={() => navigate(item.path)}
-                selected={location.pathname === item.path}
-                sx={{
-                  minHeight: 48,
-                  justifyContent: open ? 'initial' : 'center',
-                  px: 2.5,
-                  borderRadius: 10,
-                  '&.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: '#ffffff',
-                    '&:hover': { bgcolor: 'primary.main' },
-                    '& .MuiListItemIcon-root': { color: '#ffffff' },
-                    '& .MuiListItemText-primary': { color: '#ffffff' }
-                  }
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 0, mr: open ? 3 : 'auto', justifyContent: 'center' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} />
-              </ListItemButton>
-            </ListItem>
+            <React.Fragment key={item.text}>
+              <ListItem disablePadding sx={{ display: 'block', mb: 0.5 }}>
+                <ListItemButton
+                  onClick={() => {
+                    if (item.hasSubmenu) {
+                      if (item.text === 'Clients') {
+                        setClientsOpen(!clientsOpen);
+                      } else if (item.text === 'Inventaire') {
+                        setInventoryOpen(!inventoryOpen);
+                      } else if (item.text === 'Opérations') {
+                        setOperationsOpen(!operationsOpen);
+                      } else if (item.text === 'Statistiques') {
+                        setStatisticsOpen(!statisticsOpen);
+                      }
+                    } else if (item.path) {
+                      navigate(item.path);
+                    }
+                  }}
+                  selected={!item.hasSubmenu && location.pathname === item.path}
+                  sx={{
+                    minHeight: 48,
+                    justifyContent: open ? 'initial' : 'center',
+                    px: 2.5,
+                    borderRadius: 10,
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.main',
+                      color: '#ffffff',
+                      '&:hover': { bgcolor: 'primary.main' },
+                      '& .MuiListItemIcon-root': { color: '#ffffff' },
+                      '& .MuiListItemText-primary': { color: '#ffffff' }
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, mr: open ? 3 : 'auto', justifyContent: 'center' }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} />
+                  {item.hasSubmenu && open && (
+                    item.text === 'Clients' 
+                      ? (clientsOpen ? <ExpandLess /> : <ExpandMore />)
+                      : item.text === 'Inventaire'
+                      ? (inventoryOpen ? <ExpandLess /> : <ExpandMore />)
+                      : item.text === 'Opérations'
+                      ? (operationsOpen ? <ExpandLess /> : <ExpandMore />)
+                      : (statisticsOpen ? <ExpandLess /> : <ExpandMore />)
+                  )}
+                </ListItemButton>
+              </ListItem>
+
+              {/* Submenu items */}
+              {item.hasSubmenu && item.submenu && (
+                <Box
+                  sx={{
+                    maxHeight: (item.text === 'Clients' && clientsOpen) || (item.text === 'Inventaire' && inventoryOpen) || (item.text === 'Opérations' && operationsOpen) || (item.text === 'Statistiques' && statisticsOpen) ? '500px' : '0px',
+                    overflow: 'hidden',
+                    transition: 'max-height 0.3s ease-in-out',
+                    opacity: open ? 1 : 0
+                  }}
+                >
+                  {item.submenu.map((subItem) => (
+                    <ListItem key={subItem.text} disablePadding sx={{ display: 'block', mb: 0.5 }}>
+                      <ListItemButton
+                        onClick={() => navigate(subItem.path)}
+                        selected={location.pathname === subItem.path}
+                        sx={{
+                          minHeight: 44,
+                          pl: 6,
+                          pr: 2.5,
+                          borderRadius: 10,
+                          '&.Mui-selected': {
+                            bgcolor: 'primary.main',
+                            color: '#ffffff',
+                            '&:hover': { bgcolor: 'primary.main' },
+                            '& .MuiListItemIcon-root': { color: '#ffffff' },
+                            '& .MuiListItemText-primary': { color: '#ffffff' }
+                          }
+                        }}
+                      >
+                        {subItem.icon && (
+                          <ListItemIcon sx={{ minWidth: 0, mr: 2, justifyContent: 'center', fontSize: 20 }}>
+                            {subItem.icon}
+                          </ListItemIcon>
+                        )}
+                        <ListItemText 
+                          primary={subItem.text} 
+                          primaryTypographyProps={{ fontSize: 13, fontWeight: 400 }} 
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </Box>
+              )}
+            </React.Fragment>
           ))}
         </List>
         <Divider sx={{ my: 1, mx: 2 }} />

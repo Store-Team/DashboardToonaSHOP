@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -15,7 +15,13 @@ import {
   TextField, 
   MenuItem, 
   CircularProgress,
-  Divider
+  Divider,
+  TablePagination,
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  SelectChangeEvent
 } from '@mui/material';
 import { Add as AddIcon, Receipt as ReceiptIcon } from '@mui/icons-material';
 import api from '../../api/axios';
@@ -33,96 +39,240 @@ const modalStyle = {
   borderRadius: 2,
 };
 
+interface PaymentGroup {
+  id: number;
+  nomEntreprise: string;
+  email: string;
+}
+
 interface Payment {
-  id: string;
-  groupName: string;
-  amount: number;
-  date: string;
-  method: string;
+  id: number;
+  status: string;
+  transactionId: string;
+  reference: string;
+  statusDescription: string;
+  amount: string;
+  provider: string;
   plan: string;
+  months: number;
+  orderCurrency: string;
+  createdAt: string;
+  group: PaymentGroup;
+}
+
+interface PaginatedResponse {
+  data: Payment[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 const PaymentHistory: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const { showSuccess, showError } = useSnackbar();
 
   // Form states
-  const [targetGroup, setTargetGroup] = useState('');
-  const [plan, setPlan] = useState('premium');
-  const [duration, setDuration] = useState(12);
+  const [targetGroupId, setTargetGroupId] = useState('');
+  const [plan, setPlan] = useState('pro');
+  const [months, setMonths] = useState(3);
+
+  const fetchPayments = useCallback(async (currentPage: number, limit: number, status?: string) => {
+    setLoading(true);
+    try {
+      const params: any = { page: currentPage + 1, limit };
+      // if (status && status !== 'all') {
+      //   params.status = status; // Uncomment when API supports status filter
+      // }
+      
+      const response = await api.get<PaginatedResponse>('/admin/payments', { params });
+      setPayments(response.data.data);
+      setTotalCount(response.data.total);
+    } catch (err: any) {
+      showError(err?.response?.data?.error || 'Erreur lors du chargement des paiements');
+      // Mock data for development
+      const mockPayments: Payment[] = [
+        { id: 1, status: 'approved', transactionId: '2445104189', reference: 'OCETRASSID', amount: '35000', provider: 'MPESA', plan: 'pro', months: 3, createdAt: '2026-01-15 10:00:00', orderCurrency: 'XAF', statusDescription: '', group: { id: 101, nomEntreprise: 'Tech Solutions Sarl', email: 'tech@solutions.com' } },
+        { id: 2, status: 'approved', transactionId: '2445104190', reference: 'OPMXTRAID', amount: '25000', provider: 'OM', plan: 'basic', months: 3, createdAt: '2026-01-20 14:30:00', orderCurrency: 'XAF', statusDescription: '', group: { id: 102, nomEntreprise: 'Commerce Plus', email: 'contact@commerceplus.com' } },
+        { id: 3, status: 'failed', transactionId: '2445104191', reference: 'FLTRANXYZ', amount: '50000', provider: 'MPESA', plan: 'enterprise', months: 6, createdAt: '2026-01-25 09:15:00', orderCurrency: 'XAF', statusDescription: '', group: { id: 103, nomEntreprise: 'AgriPro Group', email: 'info@agripro.com' } }
+      ];
+      setPayments(mockPayments);
+      setTotalCount(mockPayments.length);
+    } finally {
+      setLoading(false);
+    }
+  }, [showError]);
 
   useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        const response = await api.get('/admin/payments');
-        setPayments(response.data);
-      } catch (err) {
-        setPayments([
-          { id: 'TX-1001', groupName: 'Global Tech Sarl', amount: 450000, date: '2023-10-01', method: 'Orange Money', plan: 'Enterprise' },
-          { id: 'TX-1002', groupName: 'Blue Sky Soft', amount: 120000, date: '2023-10-05', method: 'Momo', plan: 'Premium' },
-          { id: 'TX-1003', groupName: 'Logistics Pro', amount: 50000, date: '2023-10-12', method: 'Visa', plan: 'Standard' },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPayments();
-  }, []);
+    fetchPayments(page, rowsPerPage, statusFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, rowsPerPage, statusFilter]);
 
   const handleExtend = async () => {
+    if (!targetGroupId) {
+      showError('Veuillez sélectionner une entreprise');
+      return;
+    }
+    
     try {
-      // In a real app, targetGroup would be an ID from a dropdown
-      await api.post(`/admin/group/${targetGroup || '1'}/subscription/extend`, { plan, duration });
+      await api.post(`/admin/group/${targetGroupId}/subscription/extend`, { 
+        months, 
+        plan 
+      });
       showSuccess('L\'abonnement a été étendu avec succès.');
       setModalOpen(false);
-    } catch (err) {
-      showError('Erreur lors de l\'extension.');
+      setTargetGroupId('');
+    } catch (err: any) {
+      showError(err?.response?.data?.error || 'Erreur lors de l\'extension.');
     }
+  };
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleStatusFilterChange = (event: SelectChangeEvent) => {
+    setStatusFilter(event.target.value);
+    setPage(0);
+  };
+
+  const getStatusChip = (status: string) => {
+    const statusConfig: Record<string, { label: string; color: 'success' | 'error' | 'warning' | 'default' }> = {
+      approved: { label: 'Approuvé', color: 'success' },
+      failed: { label: 'Échoué', color: 'error' },
+      timeout: { label: 'Timeout', color: 'warning' },
+      pending: { label: 'En attente', color: 'default' }
+    };
+    
+    const config = statusConfig[status] || { label: status, color: 'default' as const };
+    return <Chip label={config.label} color={config.color} size="small" variant="outlined" sx={{ fontWeight: 600 }} />;
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('fr-FR', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Paiements & Abonnements
-        </Typography>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Paiements & Abonnements
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {totalCount} paiement{totalCount > 1 ? 's' : ''} enregistré{totalCount > 1 ? 's' : ''}
+          </Typography>
+        </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setModalOpen(true)}>
           Étendre un abonnement
         </Button>
       </Box>
 
+      <Paper sx={{ mb: 3, p: 2 }}>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Filtrer par statut</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Filtrer par statut"
+            onChange={handleStatusFilterChange}
+          >
+            <MenuItem value="all">Tous les statuts</MenuItem>
+            <MenuItem value="approved">Approuvé</MenuItem>
+            <MenuItem value="failed">Échoué</MenuItem>
+            <MenuItem value="timeout">Timeout</MenuItem>
+            <MenuItem value="pending">En attente</MenuItem>
+          </Select>
+        </FormControl>
+      </Paper>
+
       <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
         {loading ? (
           <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /></Box>
+        ) : payments.length === 0 ? (
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <Typography color="text.secondary">Aucun paiement trouvé</Typography>
+          </Box>
         ) : (
-          <Table>
-            <TableHead sx={{ bgcolor: '#f8f9fa' }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Transaction ID</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Company</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Amount (XAF)</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Plan</TableCell>
-                <TableCell sx={{ fontWeight: 700 }} align="right">Invoice</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {payments.map((p) => (
-                <TableRow key={p.id} hover>
-                  <TableCell>{p.id}</TableCell>
-                  <TableCell>{p.groupName}</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>{p.amount.toLocaleString()}</TableCell>
-                  <TableCell>{p.date}</TableCell>
-                  <TableCell>{p.plan}</TableCell>
-                  <TableCell align="right">
-                    <Button size="small" startIcon={<ReceiptIcon />}>PDF</Button>
-                  </TableCell>
+          <>
+            <Table>
+              <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Référence</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Entreprise</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Montant</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Provider</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Plan</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Durée</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Statut</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {payments.map((payment) => (
+                  <TableRow key={payment.id} hover>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{payment.reference}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        TX: {payment.transactionId}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{payment.group.nomEntreprise}</Typography>
+                      <Typography variant="caption" color="text.secondary">{payment.group.email}</Typography>
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>
+                      {parseFloat(payment.amount).toFixed(2)} {payment.orderCurrency}
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={payment.provider} size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{payment.plan}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{payment.months} mois</Typography>
+                    </TableCell>
+                    <TableCell>{getStatusChip(payment.status)}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{formatDate(payment.createdAt)}</Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button size="small" startIcon={<ReceiptIcon />}>Détails</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <TablePagination
+              component="div"
+              count={totalCount}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              labelRowsPerPage="Lignes par page:"
+              labelDisplayedRows={({ from, to, count }) => `${from}-${to} sur ${count}`}
+            />
+          </>
         )}
       </TableContainer>
 
@@ -137,11 +287,13 @@ const PaymentHistory: React.FC = () => {
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <TextField
-              label="Nom de l'entreprise"
+              label="ID de l'entreprise"
               fullWidth
-              value={targetGroup}
-              onChange={(e) => setTargetGroup(e.target.value)}
-              placeholder="Ex: Global Tech Sarl"
+              type="number"
+              value={targetGroupId}
+              onChange={(e) => setTargetGroupId(e.target.value)}
+              placeholder="Ex: 12"
+              helperText="Entrez l'ID numérique de l'entreprise"
             />
             
             <TextField
@@ -151,17 +303,17 @@ const PaymentHistory: React.FC = () => {
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
             >
-              <MenuItem value="standard">Standard (Basic Features)</MenuItem>
-              <MenuItem value="premium">Premium (All Features)</MenuItem>
-              <MenuItem value="enterprise">Enterprise (Unlimited + API)</MenuItem>
+              <MenuItem value="basic">Basic</MenuItem>
+              <MenuItem value="pro">Pro</MenuItem>
+              <MenuItem value="enterprise">Enterprise</MenuItem>
             </TextField>
 
             <TextField
               select
               label="Durée (Mois)"
               fullWidth
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
+              value={months}
+              onChange={(e) => setMonths(Number(e.target.value))}
             >
               <MenuItem value={1}>1 Mois</MenuItem>
               <MenuItem value={3}>3 Mois</MenuItem>
