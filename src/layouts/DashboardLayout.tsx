@@ -49,7 +49,11 @@ import {
   BarChart as BarChartIcon,
   Inventory2 as Inventory2Icon,
   Group as GroupIcon,
-  ShowChart as ShowChartIcon
+  ShowChart as ShowChartIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Handshake as HandshakeIcon,
+  ReportProblem as ReportProblemIcon,
+  Storefront as StorefrontIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -111,6 +115,8 @@ const DashboardLayout: React.FC = () => {
     { text: 'Payments & Subscriptions', icon: <PaymentIcon />, path: '/payments' },
     { text: 'Plans', icon: <CategoryIcon />, path: '/plans' },
     { text: 'Promo Codes', icon: <LocalOfferIcon />, path: '/promo-codes' },
+    { text: 'Produits', icon: <Inventory2Icon />, path: '/products' },
+    { text: 'Gestion Ventes', icon: <ShoppingCartIcon />, path: '/sales-management' },
     { 
       text: 'Clients', 
       icon: <PeopleIcon />, 
@@ -129,6 +135,7 @@ const DashboardLayout: React.FC = () => {
       hasSubmenu: true,
       submenu: [
         { text: 'Alertes Stocks', icon: <WarningAmberIcon />, path: '/inventory/alerts' },
+        { text: 'Alertes Péremption', icon: <WarningAmberIcon />, path: '/inventory/expirations' },
         { text: 'Stocks Entrepôts', icon: <WarehouseIcon />, path: '/inventory/warehouse' },
         { text: 'Stocks Points de Vente', icon: <StoreIcon />, path: '/inventory/pos' }
       ]
@@ -153,6 +160,9 @@ const DashboardLayout: React.FC = () => {
         { text: 'Analyses Ventes', icon: <ShowChartIcon />, path: '/statistics/sales-analytics' }
       ]
     },
+    { text: 'Partenariats', icon: <HandshakeIcon />, path: '/partnerships' },
+    { text: 'Réclamations', icon: <ReportProblemIcon />, path: '/claims' },
+    { text: 'Points de Vente', icon: <StorefrontIcon />, path: '/points-of-sale' },
   ];
 
   const handleLogout = () => {

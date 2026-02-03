@@ -26,6 +26,12 @@ import StockHistory from './pages/Operations/StockHistory';
 import TopProducts from './pages/Statistics/TopProducts';
 import TopClients from './pages/Statistics/TopClients';
 import SalesAnalytics from './pages/Statistics/SalesAnalytics';
+import ProductManagement from './pages/Products/ProductManagement';
+import SalesManagement from './pages/Sales/SalesManagement';
+import ExpirationAlerts from './pages/Inventory/ExpirationAlerts';
+import PartnershipManagement from './pages/Partnerships/PartnershipManagement';
+import ClaimManagement from './pages/Claims/ClaimManagement';
+import PointOfSaleManagement from './pages/PointsOfSale/PointOfSaleManagement';
 import Login from './pages/Auth/Login';
 import { SnackbarProvider } from './context/SnackbarContext';
 
@@ -73,6 +79,12 @@ const App: React.FC = () => {
                 <Route path="statistics/top-products" element={<TopProducts />} />
                 <Route path="statistics/top-clients" element={<TopClients />} />
                 <Route path="statistics/sales-analytics" element={<SalesAnalytics />} />
+                <Route path="products" element={<ProductManagement />} />
+                <Route path="sales-management" element={<SalesManagement />} />
+                <Route path="inventory/expirations" element={<ExpirationAlerts />} />
+                <Route path="partnerships" element={<PartnershipManagement />} />
+                <Route path="claims" element={<ClaimManagement />} />
+                <Route path="points-of-sale" element={<PointOfSaleManagement />} />
               </Route>
               
               <Route path="*" element={<Navigate to="/" replace />} />
