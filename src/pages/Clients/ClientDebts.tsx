@@ -35,7 +35,7 @@ import {
   Warning as WarningIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/axios';
+import api from '../../services/api/axios';
 import { useSnackbar } from '../../context/SnackbarContext';
 
 interface DebtClient {

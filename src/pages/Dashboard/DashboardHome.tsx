@@ -35,7 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../../components/StatCard';
-import api from '../../api/axios';
+import api from '../../services/api/axios';
 import { useSnackbar } from '../../context/SnackbarContext';
 
 interface Stats {
@@ -147,7 +147,7 @@ const DashboardHome: React.FC = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            Bienvenue dans l'aldministration ToonaShop
+            Bienvenue dans l'aldministration ToonaSHOP
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Gérez vos entreprises, utilisateurs et abonnements depuis un seul endroit.
@@ -205,7 +205,7 @@ const DashboardHome: React.FC = () => {
         </Grid>
 
         {/* Banner Section Inspired by Google Partner Dashboard */}
-        <Grid item xs={12}>
+        {/* <Grid item xs={12}>
           <Card sx={{ bgcolor: 'white', position: 'relative', overflow: 'visible', mt: 4 }}>
             <CardContent sx={{ p: 4, display: 'flex', alignItems: 'center' }}>
               <Box sx={{ flex: 1 }}>
@@ -232,7 +232,7 @@ const DashboardHome: React.FC = () => {
               />
             </CardContent>
           </Card>
-        </Grid>
+        </Grid> */}
 
         {/* Nouveaux groupes */}
         <Grid item xs={12} md={6}>

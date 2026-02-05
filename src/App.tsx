@@ -32,6 +32,10 @@ import ExpirationAlerts from './pages/Inventory/ExpirationAlerts';
 import PartnershipManagement from './pages/Partnerships/PartnershipManagement';
 import ClaimManagement from './pages/Claims/ClaimManagement';
 import PointOfSaleManagement from './pages/PointsOfSale/PointOfSaleManagement';
+import ImfPendingGroups from './pages/IMF/ImfPendingGroups';
+import ImfApprovedGroups from './pages/IMF/ImfApprovedGroups';
+import ImfApprovalPage from './pages/IMF/ImfApprovalPage';
+import UserManagement from './pages/Users/UserManagement';
 import Login from './pages/Auth/Login';
 import { SnackbarProvider } from './context/SnackbarContext';
 
@@ -85,6 +89,10 @@ const App: React.FC = () => {
                 <Route path="partnerships" element={<PartnershipManagement />} />
                 <Route path="claims" element={<ClaimManagement />} />
                 <Route path="points-of-sale" element={<PointOfSaleManagement />} />
+                <Route path="imf/pending" element={<ImfPendingGroups />} />
+                <Route path="imf/approved" element={<ImfApprovedGroups />} />
+                <Route path="imf/validate" element={<ImfApprovalPage />} />
+                <Route path="users" element={<UserManagement />} />
               </Route>
               
               <Route path="*" element={<Navigate to="/" replace />} />

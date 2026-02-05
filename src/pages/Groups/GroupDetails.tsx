@@ -45,7 +45,7 @@ import {
   PersonAdd as PersonAddIcon,
   CalendarMonth as CalendarIcon
 } from '@mui/icons-material';
-import api from '../../api/axios';
+import api from '../../services/api/axios';
 import { useSnackbar } from '../../context/SnackbarContext';
 
 interface Group {
@@ -105,8 +105,7 @@ const GroupDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
-  const [months, setMonths] = useState(3);
-  const [plan, setPlan] = useState('pro');
+  const [days, setDays] = useState(30);
   const { showSuccess, showError } = useSnackbar();
 
   useEffect(() => {
@@ -182,7 +181,7 @@ const GroupDetails: React.FC = () => {
   const handleExtendSubscription = async () => {
     if (!group) return;
     try {
-      await api.post(`/admin/group/${group.id}/subscription/extend`, { months, plan });
+      await api.post(`/admin/group/${group.id}/subscription/extend`, { days });
       showSuccess('Abonnement étendu avec succès');
       setExtendDialogOpen(false);
       // Refresh group data
@@ -479,29 +478,21 @@ const GroupDetails: React.FC = () => {
               <TextField
                 select
                 fullWidth
-                label="Plan Tarifaire"
-                value={plan}
-                onChange={(e) => setPlan(e.target.value)}
+                label="Durée d'extension"
+                value={days}
+                onChange={(e) => setDays(Number(e.target.value))}
               >
-                <MenuItem value="basic">Basic</MenuItem>
-                <MenuItem value="pro">Pro</MenuItem>
-                <MenuItem value="enterprise">Enterprise</MenuItem>
+                <MenuItem value={7}>7 Jours</MenuItem>
+                <MenuItem value={15}>15 Jours</MenuItem>
+                <MenuItem value={30}>30 Jours (1 Mois)</MenuItem>
+                <MenuItem value={60}>60 Jours (2 Mois)</MenuItem>
+                <MenuItem value={90}>90 Jours (3 Mois)</MenuItem>
+                <MenuItem value={180}>180 Jours (6 Mois)</MenuItem>
+                <MenuItem value={365}>365 Jours (1 An)</MenuItem>
               </TextField>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                select
-                fullWidth
-                label="Durée (Mois)"
-                value={months}
-                onChange={(e) => setMonths(Number(e.target.value))}
-              >
-                <MenuItem value={1}>1 Mois</MenuItem>
-                <MenuItem value={3}>3 Mois</MenuItem>
-                <MenuItem value={6}>6 Mois</MenuItem>
-                <MenuItem value={12}>12 Mois</MenuItem>
-                <MenuItem value={24}>24 Mois</MenuItem>
-              </TextField>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                L'abonnement sera étendu de {days} jour(s) à partir de la date d'expiration actuelle
+              </Typography>
             </Grid>
           </Grid>
         </DialogContent>

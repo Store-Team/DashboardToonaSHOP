@@ -25,7 +25,7 @@ import {
   Check as CheckIcon,
   Handshake as HandshakeIcon
 } from '@mui/icons-material';
-import api from '../../api/axios';
+import api from '../../services/api/axios';
 import { useSnackbar } from '../../context/SnackbarContext';
 
 interface Partnership {

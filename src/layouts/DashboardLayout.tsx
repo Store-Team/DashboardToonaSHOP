@@ -53,7 +53,9 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Handshake as HandshakeIcon,
   ReportProblem as ReportProblemIcon,
-  Storefront as StorefrontIcon
+  Storefront as StorefrontIcon,
+  AccountBalance as AccountBalanceIcon,
+  ManageAccounts as ManageAccountsIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -103,6 +105,7 @@ const DashboardLayout: React.FC = () => {
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [operationsOpen, setOperationsOpen] = useState(false);
   const [statisticsOpen, setStatisticsOpen] = useState(false);
+  const [imfOpen, setImfOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,8 +118,8 @@ const DashboardLayout: React.FC = () => {
     { text: 'Payments & Subscriptions', icon: <PaymentIcon />, path: '/payments' },
     { text: 'Plans', icon: <CategoryIcon />, path: '/plans' },
     { text: 'Promo Codes', icon: <LocalOfferIcon />, path: '/promo-codes' },
-    { text: 'Produits', icon: <Inventory2Icon />, path: '/products' },
-    { text: 'Gestion Ventes', icon: <ShoppingCartIcon />, path: '/sales-management' },
+    // { text: 'Produits', icon: <Inventory2Icon />, path: '/products' },
+    // { text: 'Gestion Ventes', icon: <ShoppingCartIcon />, path: '/sales-management' },
     { 
       text: 'Clients', 
       icon: <PeopleIcon />, 
@@ -127,42 +130,53 @@ const DashboardLayout: React.FC = () => {
         { text: 'Clients Inactifs', icon: <PersonOffIcon />, path: '/clients/inactive' }
       ]
     },
-    { text: 'Aperçu des Ventes', icon: <TrendingUpIcon />, path: '/sales' },
-    { text: 'Factures', icon: <ReceiptIcon />, path: '/invoices' },
-    { 
-      text: 'Inventaire', 
-      icon: <InventoryIcon />, 
-      hasSubmenu: true,
-      submenu: [
-        { text: 'Alertes Stocks', icon: <WarningAmberIcon />, path: '/inventory/alerts' },
-        { text: 'Alertes Péremption', icon: <WarningAmberIcon />, path: '/inventory/expirations' },
-        { text: 'Stocks Entrepôts', icon: <WarehouseIcon />, path: '/inventory/warehouse' },
-        { text: 'Stocks Points de Vente', icon: <StoreIcon />, path: '/inventory/pos' }
-      ]
-    },
-    { 
-      text: 'Opérations', 
-      icon: <EventAvailableIcon />, 
-      hasSubmenu: true,
-      submenu: [
-        { text: 'Clôtures Journalières', icon: <EventAvailableIcon />, path: '/operations/closures' },
-        { text: 'Dépenses', icon: <AttachMoneyIcon />, path: '/operations/expenses' },
-        { text: 'Historique Stocks', icon: <HistoryIcon />, path: '/operations/stock-history' }
-      ]
-    },
-    { 
-      text: 'Statistiques', 
-      icon: <BarChartIcon />, 
-      hasSubmenu: true,
-      submenu: [
-        { text: 'Top Produits', icon: <Inventory2Icon />, path: '/statistics/top-products' },
-        { text: 'Top Clients', icon: <GroupIcon />, path: '/statistics/top-clients' },
-        { text: 'Analyses Ventes', icon: <ShowChartIcon />, path: '/statistics/sales-analytics' }
-      ]
-    },
-    { text: 'Partenariats', icon: <HandshakeIcon />, path: '/partnerships' },
+    // { text: 'Aperçu des Ventes', icon: <TrendingUpIcon />, path: '/sales' },
+    // { text: 'Factures', icon: <ReceiptIcon />, path: '/invoices' },
+    // { 
+    //   text: 'Inventaire', 
+    //   icon: <InventoryIcon />, 
+    //   hasSubmenu: true,
+    //   submenu: [
+    //     { text: 'Alertes Stocks', icon: <WarningAmberIcon />, path: '/inventory/alerts' },
+    //     { text: 'Alertes Péremption', icon: <WarningAmberIcon />, path: '/inventory/expirations' },
+    //     { text: 'Stocks Entrepôts', icon: <WarehouseIcon />, path: '/inventory/warehouse' },
+    //     { text: 'Stocks Points de Vente', icon: <StoreIcon />, path: '/inventory/pos' }
+    //   ]
+    // },
+    // { 
+    //   text: 'Opérations', 
+    //   icon: <EventAvailableIcon />, 
+    //   hasSubmenu: true,
+    //   submenu: [
+    //     { text: 'Clôtures Journalières', icon: <EventAvailableIcon />, path: '/operations/closures' },
+    //     { text: 'Dépenses', icon: <AttachMoneyIcon />, path: '/operations/expenses' },
+    //     { text: 'Historique Stocks', icon: <HistoryIcon />, path: '/operations/stock-history' }
+    //   ]
+    // },
+    // { 
+    //   text: 'Statistiques', 
+    //   icon: <BarChartIcon />, 
+    //   hasSubmenu: true,
+    //   submenu: [
+    //     { text: 'Top Produits', icon: <Inventory2Icon />, path: '/statistics/top-products' },
+    //     { text: 'Top Clients', icon: <GroupIcon />, path: '/statistics/top-clients' },
+    //     { text: 'Analyses Ventes', icon: <ShowChartIcon />, path: '/statistics/sales-analytics' }
+    //   ]
+    // },
+    // { text: 'Partenariats', icon: <HandshakeIcon />, path: '/partnerships' },
     { text: 'Réclamations', icon: <ReportProblemIcon />, path: '/claims' },
-    { text: 'Points de Vente', icon: <StorefrontIcon />, path: '/points-of-sale' },
+    { 
+      text: 'Gestion IMF', 
+      icon: <AccountBalanceIcon />, 
+      hasSubmenu: true,
+      submenu: [
+        { text: 'IMF en Attente', path: '/imf/pending' },
+        { text: 'IMF Approuvés', path: '/imf/approved' },
+        { text: 'Valider IMF', path: '/imf/validate' }
+      ]
+    },
+    { text: 'Utilisateurs', icon: <ManageAccountsIcon />, path: '/users' },
+    // { text: 'Points de Vente', icon: <StorefrontIcon />, path: '/points-of-sale' },
   ];
 
   const handleLogout = () => {
@@ -252,6 +266,8 @@ const DashboardLayout: React.FC = () => {
                         setOperationsOpen(!operationsOpen);
                       } else if (item.text === 'Statistiques') {
                         setStatisticsOpen(!statisticsOpen);
+                      } else if (item.text === 'Gestion IMF') {
+                        setImfOpen(!imfOpen);
                       }
                     } else if (item.path) {
                       navigate(item.path);
@@ -283,6 +299,8 @@ const DashboardLayout: React.FC = () => {
                       ? (inventoryOpen ? <ExpandLess /> : <ExpandMore />)
                       : item.text === 'Opérations'
                       ? (operationsOpen ? <ExpandLess /> : <ExpandMore />)
+                      : item.text === 'Gestion IMF'
+                      ? (imfOpen ? <ExpandLess /> : <ExpandMore />)
                       : (statisticsOpen ? <ExpandLess /> : <ExpandMore />)
                   )}
                 </ListItemButton>
@@ -292,7 +310,7 @@ const DashboardLayout: React.FC = () => {
               {item.hasSubmenu && item.submenu && (
                 <Box
                   sx={{
-                    maxHeight: (item.text === 'Clients' && clientsOpen) || (item.text === 'Inventaire' && inventoryOpen) || (item.text === 'Opérations' && operationsOpen) || (item.text === 'Statistiques' && statisticsOpen) ? '500px' : '0px',
+                    maxHeight: (item.text === 'Clients' && clientsOpen) || (item.text === 'Inventaire' && inventoryOpen) || (item.text === 'Opérations' && operationsOpen) || (item.text === 'Statistiques' && statisticsOpen) || (item.text === 'Gestion IMF' && imfOpen) ? '500px' : '0px',
                     overflow: 'hidden',
                     transition: 'max-height 0.3s ease-in-out',
                     opacity: open ? 1 : 0

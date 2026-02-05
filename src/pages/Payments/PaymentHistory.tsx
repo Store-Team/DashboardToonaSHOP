@@ -24,7 +24,7 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import { Add as AddIcon, Receipt as ReceiptIcon } from '@mui/icons-material';
-import api from '../../api/axios';
+import api from '../../services/api/axios';
 import { useSnackbar } from '../../context/SnackbarContext';
 
 const modalStyle = {

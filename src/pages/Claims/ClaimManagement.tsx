@@ -28,7 +28,7 @@ import {
   Add as AddIcon,
   ReportProblem as ReportIcon
 } from '@mui/icons-material';
-import api from '../../api/axios';
+import api from '../../services/api/axios';
 import { useSnackbar } from '../../context/SnackbarContext';
 
 interface Reclamation {
