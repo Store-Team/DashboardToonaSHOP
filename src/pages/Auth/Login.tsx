@@ -117,7 +117,7 @@ const Login: React.FC = () => {
             onChange={(e) => setIdentifier(e.target.value)}
             disabled={loading}
             placeholder="Ex: 0812345678 ou email@exemple.com"
-            helperText="Actuellement: Numéro de téléphone. Prochainement: Email"
+            helperText=""
           />
           <TextField
             fullWidth
