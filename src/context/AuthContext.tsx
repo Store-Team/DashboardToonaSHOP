@@ -23,20 +23,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const token = localStorage.getItem('toona_admin_token');
-    if (token) {
-      // In a real app, we'd verify the token or fetch user info here
-      setUser({ id: '1', name: 'Global Administrator', role: 'ROLE_ADMIN_GLOBAL' });
+    const storedUser = localStorage.getItem('toona_admin_user');
+    
+    if (token && storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+      } catch (err) {
+        // Si les données sont corrompues, nettoyer
+        console.error('Données utilisateur corrompues, nettoyage...');
+        localStorage.removeItem('toona_admin_token');
+        localStorage.removeItem('toona_admin_user');
+      }
     }
     setLoading(false);
   }, []);
 
   const login = (token: string, userData: User) => {
     localStorage.setItem('toona_admin_token', token);
+    localStorage.setItem('toona_admin_user', JSON.stringify(userData));
     setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem('toona_admin_token');
+    localStorage.removeItem('toona_admin_user');
     setUser(null);
   };
 

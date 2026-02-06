@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nettoyer localStorage - ToonaShop Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+            margin-top: 20px;
+            display: none;
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .info strong {
+            display: block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Nettoyage localStorage</h1>
+        <p>Cliquez sur le bouton ci-dessous pour nettoyer toutes les données stockées localement (token, session utilisateur, etc.)</p>
+        
+        <button onclick="clearStorage()">Nettoyer localStorage</button>
+        
+        <div class="success" id="successMsg">
+            ✅ localStorage nettoyé avec succès!<br>
+            Vous pouvez maintenant retourner sur l'application.
+        </div>
+        
+        <div class="info">
+            <strong>Pourquoi cette étape?</strong>
+            Votre navigateur contient un ancien token de connexion qui déclenche des requêtes automatiques vers le backend.<br><br>
+            Après le nettoyage, vous devrez vous reconnecter avec vos vrais identifiants.
+        </div>
+    </div>
+
+    <script>
+        function clearStorage() {
+            // Nettoyer localStorage
+            localStorage.clear();
+            
+            // Nettoyer sessionStorage aussi
+            sessionStorage.clear();
+            
+            // Afficher le message de succès
+            document.getElementById('successMsg').style.display = 'block';
+            
+            // Rediriger vers l'app après 2 secondes
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

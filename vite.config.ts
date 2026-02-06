@@ -1,9 +1,19 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import http from 'http';
+import https from 'https';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    
+    // Force IPv4 and keep connections alive
+    const agent = new https.Agent({
+      keepAlive: true,
+      family: 4, // Force IPv4
+      timeout: 30000
+    });
+    
     return {
       server: {
         port: 3000,
@@ -13,7 +23,9 @@ export default defineConfig(({ mode }) => {
             target: 'https://toonashop.toonaerp.com',
             changeOrigin: true,
             secure: false,
-            timeout: 10000,
+            timeout: 30000,
+            followRedirects: true,
+            agent: agent,
             configure: (proxy, _options) => {
               proxy.on('error', (err, _req, _res) => {
                 console.log('proxy error', err);

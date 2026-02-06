@@ -46,40 +46,13 @@ import {
   CalendarMonth as CalendarIcon
 } from '@mui/icons-material';
 import api from '../../services/api/axios';
+import * as adminService from '../../services/adminService';
 import { useSnackbar } from '../../context/SnackbarContext';
 
-interface Group {
-  id: number;
-  nomEntreprise: string;
-  contact: string;
-  email: string;
-  nrccm: string;
-  user_count: number;
-  point_of_sale_count: number;
-  warehouse_count: number;
-  isPaid: boolean;
-  subscriptionEnd: string;
-}
-
-interface NewUser {
-  id: number;
-  numero: string;
-  nom: string;
-  prenom: string;
-  created_at: string;
-}
-
-interface Payment {
-  id: number;
-  status: string;
-  transactionId: string;
-  reference: string;
-  amount: string;
-  provider: string;
-  plan: string;
-  months: number;
-  createdAt: string;
-}
+// Utiliser les types du service adminService
+type Group = adminService.Group;
+type NewUser = adminService.NewUser;
+type Payment = adminService.Payment;
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -112,18 +85,48 @@ const GroupDetails: React.FC = () => {
     const fetchGroupDetails = async () => {
       if (!id) return;
       setLoading(true);
+      console.log('[GroupDetails] Fetching data for group ID:', id);
+      
+      let groupData: Group | null = null;
+      
       try {
-        // Fetch group info, new users, and payments in parallel
-        const [groupRes, usersRes, paymentsRes] = await Promise.all([
-          api.get(`/admin/groups/${id}`),
-          api.get(`/admin/group/${id}/new-users`),
-          api.get(`/admin/group/${id}/payments`)
+        // Essayer d'abord de récupérer le groupe directement
+        groupData = await adminService.getGroupById(Number(id));
+        console.log('[GroupDetails] Successfully fetched group data directly:', groupData);
+      } catch (directErr) {
+        console.log('[GroupDetails] Direct fetch failed, trying to get from groups list');
+        try {
+          // Si l'endpoint direct n'existe pas, récupérer depuis la liste
+          const allGroups = await adminService.getAllGroups(1, 100);
+          groupData = allGroups.data.find(g => g.id === Number(id)) || null;
+          console.log('[GroupDetails] Found group in list:', groupData);
+        } catch (listErr) {
+          console.error('[GroupDetails] Failed to fetch from list too:', listErr);
+        }
+      }
+      
+      if (!groupData) {
+        throw new Error('Group not found');
+      }
+      
+      try {
+        // Fetch users and payments in parallel
+        const [usersData, paymentsData] = await Promise.all([
+          adminService.getGroupNewUsers(Number(id)),
+          adminService.getGroupPayments(Number(id))
         ]);
 
-        setGroup(groupRes.data);
-        setNewUsers(usersRes.data.data);
-        setPayments(paymentsRes.data.data);
+        setGroup(groupData);
+        setNewUsers(usersData.data || []);
+        setPayments(paymentsData.data || []);
       } catch (err: any) {
+        console.error('[GroupDetails] Error fetching group details:', {
+          error: err,
+          response: err?.response,
+          status: err?.response?.status,
+          data: err?.response?.data,
+          url: err?.config?.url
+        });
         showError(err?.response?.data?.error || 'Erreur lors du chargement des détails');
         // Mock data for development
         setGroup({
@@ -139,8 +142,8 @@ const GroupDetails: React.FC = () => {
           subscriptionEnd: '2026-06-30 23:59:59'
         });
         setNewUsers([
-          { id: 1, numero: 'USER001', nom: 'Kamga', prenom: 'Paul', created_at: '2026-01-28 10:00:00' },
-          { id: 2, numero: 'USER002', nom: 'Mbida', prenom: 'Marie', created_at: '2026-01-29 14:30:00' }
+          { id: 1, numero: 'USER001', nom: 'Kamga', prenom: 'Paul', roles: ['user'], created_at: '2026-01-28 10:00:00' },
+          { id: 2, numero: 'USER002', nom: 'Mbida', prenom: 'Marie', roles: ['user'], created_at: '2026-01-29 14:30:00' }
         ]);
         setPayments([
           {
@@ -164,29 +167,92 @@ const GroupDetails: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // Fonction réutilisable pour récupérer les données du groupe avec fallback
+  const fetchGroupData = async (groupId: number): Promise<Group | null> => {
+    try {
+      // Essayer d'abord de récupérer le groupe directement
+      return await adminService.getGroupById(groupId);
+    } catch (directErr) {
+      console.log('[GroupDetails] Direct fetch failed, trying to get from groups list');
+      try {
+        // Si l'endpoint direct n'existe pas, récupérer depuis la liste
+        const allGroups = await adminService.getAllGroups(1, 100);
+        return allGroups.data.find(g => g.id === groupId) || null;
+      } catch (listErr) {
+        console.error('[GroupDetails] Failed to fetch from list too:', listErr);
+        return null;
+      }
+    }
+  };
+
   const handleToggleStatus = async (activate: boolean) => {
     if (!group) return;
     try {
-      const endpoint = activate ? `/admin/group/${group.id}/active` : `/admin/group/${group.id}/disable`;
-      await api.post(endpoint);
+      console.log(`[GroupDetails] Toggling status to ${activate ? 'active' : 'inactive'} for group ${group.id}`);
+      
+      if (activate) {
+        await adminService.activateGroup(group.id);
+      } else {
+        await adminService.disableGroup(group.id);
+      }
       showSuccess(`Groupe ${activate ? 'activé' : 'désactivé'} avec succès`);
-      // Refresh group data
-      const response = await api.get(`/admin/groups/${group.id}`);
-      setGroup(response.data);
+      
+      // Mise à jour optimiste de l'état local (gérer isPaid et isActive)
+      console.log('[GroupDetails] Optimistic update - setting isPaid and isActive to:', activate);
+      setGroup(prev => prev ? { 
+        ...prev, 
+        isPaid: activate,
+        isActive: activate 
+      } : null);
+      
+      // Attendre un peu pour laisser le backend traiter la requête
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Refresh group data avec fallback
+      console.log('[GroupDetails] Refreshing group data after status change...');
+      const refreshedGroup = await fetchGroupData(group.id);
+      if (refreshedGroup) {
+        console.log('[GroupDetails] Refreshed group data:', {
+          id: refreshedGroup.id,
+          isPaid: refreshedGroup.isPaid,
+          isActive: refreshedGroup.isActive,
+          nomEntreprise: refreshedGroup.nomEntreprise
+        });
+        
+        // Fusionner les données rafraîchies avec la mise à jour optimiste
+        // Si le backend ne retourne pas les champs mis à jour, on garde notre valeur
+        setGroup({
+          ...refreshedGroup,
+          isPaid: refreshedGroup.isPaid !== undefined ? refreshedGroup.isPaid : activate,
+          isActive: refreshedGroup.isActive !== undefined ? refreshedGroup.isActive : activate
+        });
+      } else {
+        console.warn('[GroupDetails] Could not refresh group data, keeping optimistic update');
+      }
     } catch (err: any) {
+      console.error('[GroupDetails] Error toggling status:', err);
       showError(err?.response?.data?.error || 'Erreur lors de la mise à jour');
+      // Annuler la mise à jour optimiste en cas d'erreur
+      setGroup(prev => prev ? { 
+        ...prev, 
+        isPaid: !activate,
+        isActive: !activate 
+      } : null);
     }
   };
 
   const handleExtendSubscription = async () => {
     if (!group) return;
     try {
-      await api.post(`/admin/group/${group.id}/subscription/extend`, { days });
+      await adminService.extendSubscription(group.id, { days });
       showSuccess('Abonnement étendu avec succès');
       setExtendDialogOpen(false);
-      // Refresh group data
-      const response = await api.get(`/admin/groups/${group.id}`);
-      setGroup(response.data);
+      
+      // Refresh group data avec fallback
+      const refreshedGroup = await fetchGroupData(group.id);
+      if (refreshedGroup) {
+        setGroup(refreshedGroup);
+      }
     } catch (err: any) {
       showError(err?.response?.data?.error || 'Erreur lors de l\'extension');
     }
@@ -207,8 +273,11 @@ const GroupDetails: React.FC = () => {
     const endDate = new Date(group.subscriptionEnd);
     const today = new Date();
     const isExpired = endDate < today;
+    
+    // Utiliser isActive si disponible, sinon isPaid
+    const isGroupActive = group.isActive !== undefined ? group.isActive : group.isPaid;
 
-    if (!group.isPaid || isExpired) {
+    if (!isGroupActive || isExpired) {
       return <Chip label="Inactif" color="error" size="medium" />;
     }
 
@@ -272,7 +341,7 @@ const GroupDetails: React.FC = () => {
           <Button variant="outlined" startIcon={<EditIcon />}>
             Modifier
           </Button>
-          {group.isPaid ? (
+          {(group.isActive !== undefined ? group.isActive : group.isPaid) ? (
             <Button variant="outlined" color="error" startIcon={<BlockIcon />} onClick={() => handleToggleStatus(false)}>
               Désactiver
             </Button>
@@ -406,14 +475,15 @@ const GroupDetails: React.FC = () => {
                         </Typography>
                       }
                       secondary={
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
+                        <React.Fragment>
+                          <Typography component="span" variant="caption" color="text.secondary">
                             Numéro: {user.numero}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" display="block">
+                          <br />
+                          <Typography component="span" variant="caption" color="text.secondary">
                             Créé le {formatDate(user.created_at)}
                           </Typography>
-                        </Box>
+                        </React.Fragment>
                       }
                     />
                   </ListItem>

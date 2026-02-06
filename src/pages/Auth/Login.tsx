@@ -14,29 +14,77 @@ import {
 import { Language as LanguageIcon } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useSnackbar } from '../../context/SnackbarContext';
+import * as authService from '../../services/authService';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState(''); // Numéro de téléphone ou email
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const { showError } = useSnackbar();
+  const { showError, showSuccess } = useSnackbar();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!identifier || !password) {
+      showError('Veuillez remplir tous les champs');
+      return;
+    }
+
     setLoading(true);
     
-    // Simulate API Login
-    setTimeout(() => {
-      if (email === 'admin@toonaerp.com' && password === 'admin') {
-        login('mock-jwt-token', { id: '1', name: 'Toona Admin', role: 'ROLE_ADMIN_GLOBAL' });
-        navigate('/');
-      } else {
-        showError('Identifiants invalides. Utilisez admin@toonaerp.com / admin');
-        setLoading(false);
-      }
-    }, 1000);
+    try {
+      // Déterminer si c'est un numéro de téléphone ou un email
+      const isEmail = identifier.includes('@');
+      
+      const credentials = {
+        password,
+        ...(isEmail ? { email: identifier } : { numero: identifier })
+      };
+
+      // Étape 1: Authentification
+      const authResponse = await authService.login(credentials);
+      
+      // Stocker temporairement le token pour l'utiliser dans la prochaine requête
+      localStorage.setItem('toona_admin_token', authResponse.token);
+      
+      // Étape 2: Récupérer les informations utilisateur
+      const userInfo = await authService.getConnectedUser();
+      
+      console.log('User info received:', userInfo);
+      
+      // Stocker les informations utilisateur et appeler le contexte
+      const userData = {
+        id: userInfo.id.toString(),
+        name: userInfo.nomUser || 'Utilisateur',
+        role: userInfo.roles?.[0] || 'ROLE_USER'
+      };
+      
+      console.log('Calling login with userData:', userData);
+      
+      login(authResponse.token, userData);
+
+      console.log('Login context updated, navigating to dashboard...');
+      
+      showSuccess('Connexion réussie !');
+      
+      // Utiliser setTimeout pour s'assurer que le contexte est mis à jour
+      setTimeout(() => {
+        console.log('Executing navigate to /');
+        navigate('/', { replace: true });
+      }, 100);
+    } catch (err: any) {
+      // Nettoyer le token en cas d'erreur
+      localStorage.removeItem('toona_admin_token');
+      
+      const errorMessage = err?.response?.data?.message 
+        || err?.response?.data?.error 
+        || 'Identifiants invalides. Veuillez réessayer.';
+      showError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,12 +110,14 @@ const Login: React.FC = () => {
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
-            label="E-mail ou téléphone"
+            label="Numéro de téléphone ou E-mail"
             variant="outlined"
             margin="normal"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             disabled={loading}
+            placeholder="Ex: 0812345678 ou email@exemple.com"
+            helperText="Actuellement: Numéro de téléphone. Prochainement: Email"
           />
           <TextField
             fullWidth

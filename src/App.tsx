@@ -42,8 +42,18 @@ import { SnackbarProvider } from './context/SnackbarContext';
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   
-  if (loading) return null;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (loading) {
+    // Afficher un loader pendant la vérification
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        Chargement...
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
   
   return <>{children}</>;
 };

@@ -35,102 +35,113 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../../components/StatCard';
-import api from '../../services/api/axios';
+import * as adminService from '../../services/adminService';
 import { useSnackbar } from '../../context/SnackbarContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface Stats {
   totalGroups: number;
   totalUsers: number;
-  activeSubscriptions: number;
-  trialGroups: number;
-  trends: {
-    groups: number;
-    users: number;
-    subs: number;
-    trials: number;
+  activeSubscriptions?: number;
+  activeGroups?: number;
+  totalRevenue?: number;
+  trialGroups?: number;
+  trends?: {
+    groups?: number;
+    users?: number;
+    subs?: number;
+    trials?: number;
   };
-}
-
-interface NewGroup {
-  id: number;
-  nomEntreprise: string;
-  email: string;
-  createdAt: string;
-  user_count: number;
-}
-
-interface ExpiringGroup {
-  id: number;
-  nomEntreprise: string;
-  email: string;
-  subscriptionEnd: string;
-  days_remaining: number;
 }
 
 const DashboardHome: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
-  const [newGroups, setNewGroups] = useState<NewGroup[]>([]);
-  const [expiringGroups, setExpiringGroups] = useState<ExpiringGroup[]>([]);
+  const [newGroups, setNewGroups] = useState<adminService.Group[]>([]);
+  const [expiringGroups, setExpiringGroups] = useState<adminService.Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingNewGroups, setLoadingNewGroups] = useState(true);
   const [loadingExpiring, setLoadingExpiring] = useState(true);
   const navigate = useNavigate();
   const { showError } = useSnackbar();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    // Ne charger les données que si l'utilisateur est authentifié
+    if (!isAuthenticated) {
+      setLoading(false);
+      setLoadingNewGroups(false);
+      setLoadingExpiring(false);
+      return;
+    }
+
+    let isMounted = true;
+
     const fetchStats = async () => {
       try {
-        const response = await api.get('/admin/stats');
-        setStats(response.data);
-      } catch (err) {
-        // Mock data for demonstration if API fails
-        setStats({
-          totalGroups: 124,
-          totalUsers: 8420,
-          activeSubscriptions: 98,
-          trialGroups: 12,
-          trends: { groups: 12, users: 5.4, subs: 8.2, trials: -2 }
-        });
+        const response = await adminService.getAdminStats();
+        console.log('Stats API Response:', response);
+        if (isMounted) {
+          setStats(response);
+        }
+      } catch (err: any) {
+        console.error('Erreur lors du chargement des statistiques:', err);
+        if (isMounted) {
+          showError('Impossible de charger les statistiques');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     const fetchNewGroups = async () => {
       try {
-        const response = await api.get('/admin/new-groups', { params: { page: 1, limit: 5 } });
-        setNewGroups(response.data.data);
-      } catch (err) {
-        // Mock data
-        setNewGroups([
-          { id: 1, nomEntreprise: 'TechStart Sarl', email: 'contact@techstart.com', createdAt: '2026-01-28 10:30:00', user_count: 3 },
-          { id: 2, nomEntreprise: 'AgriPro Group', email: 'info@agripro.cm', createdAt: '2026-01-29 14:15:00', user_count: 5 },
-          { id: 3, nomEntreprise: 'Digital Wave', email: 'hello@digitalwave.net', createdAt: '2026-01-31 09:00:00', user_count: 2 }
-        ]);
+        const response = await adminService.getNewGroups(5);
+        console.log('New Groups API Response:', response);
+        if (isMounted) {
+          setNewGroups(response || []);
+        }
+      } catch (err: any) {
+        console.error('Erreur lors du chargement des nouveaux groupes:', err);
+        if (isMounted) {
+          showError('Impossible de charger les nouveaux groupes');
+          setNewGroups([]);
+        }
       } finally {
-        setLoadingNewGroups(false);
+        if (isMounted) {
+          setLoadingNewGroups(false);
+        }
       }
     };
 
     const fetchExpiringGroups = async () => {
       try {
-        const response = await api.get('/admin/groups/expiring-soon', { params: { page: 1, limit: 5 } });
-        setExpiringGroups(response.data.data);
-      } catch (err) {
-        // Mock data
-        setExpiringGroups([
-          { id: 4, nomEntreprise: 'Commerce Plus', email: 'contact@commerceplus.cm', subscriptionEnd: '2026-02-08 23:59:59', days_remaining: 6 },
-          { id: 5, nomEntreprise: 'Logistics Pro', email: 'info@logipro.com', subscriptionEnd: '2026-02-05 23:59:59', days_remaining: 3 }
-        ]);
+        const response = await adminService.getExpiringGroups(5);
+        if (isMounted) {
+          setExpiringGroups(response || []);
+        }
+      } catch (err: any) {
+        console.error('Erreur lors du chargement des groupes expirants:', err);
+        if (isMounted) {
+          showError('Impossible de charger les groupes expirants');
+          setExpiringGroups([]);
+        }
       } finally {
-        setLoadingExpiring(false);
+        if (isMounted) {
+          setLoadingExpiring(false);
+        }
       }
     };
 
     fetchStats();
     fetchNewGroups();
     fetchExpiringGroups();
-  }, [showError]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, showError]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('fr-FR', { 
@@ -142,12 +153,19 @@ const DashboardHome: React.FC = () => {
     });
   };
 
+  const getDaysRemaining = (endDate: string) => {
+    const end = new Date(endDate);
+    const today = new Date();
+    const diff = end.getTime() - today.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            Bienvenue dans l'aldministration ToonaSHOP
+            Bienvenue dans l'administration ToonaSHOP
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Gérez vos entreprises, utilisateurs et abonnements depuis un seul endroit.
@@ -165,7 +183,7 @@ const DashboardHome: React.FC = () => {
             <StatCard 
               title="Total Companies" 
               value={stats?.totalGroups || 0} 
-              trend={stats?.trends.groups || 0} 
+              trend={stats?.trends?.groups || 0} 
               icon={<Business />} 
             />
           )}
@@ -175,7 +193,7 @@ const DashboardHome: React.FC = () => {
             <StatCard 
               title="Global Users" 
               value={stats?.totalUsers || 0} 
-              trend={stats?.trends.users || 0} 
+              trend={stats?.trends?.users || 0} 
               icon={<People />} 
               color="#F4B23C"
             />
@@ -185,8 +203,8 @@ const DashboardHome: React.FC = () => {
           {loading ? <Skeleton variant="rectangular" height={160} /> : (
             <StatCard 
               title="Active Subscriptions" 
-              value={stats?.activeSubscriptions || 0} 
-              trend={stats?.trends.subs || 0} 
+              value={stats?.activeSubscriptions || stats?.activeGroups || 0} 
+              trend={stats?.trends?.subs || 0} 
               icon={<Subscriptions />} 
               color="#4FA3D1"
             />
@@ -195,15 +213,17 @@ const DashboardHome: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           {loading ? <Skeleton variant="rectangular" height={160} /> : (
             <StatCard 
-              title="Trial Periods" 
+              title="Trial Groups" 
               value={stats?.trialGroups || 0} 
-              trend={stats?.trends.trials || 0} 
+              trend={stats?.trends?.trials || 0} 
               icon={<History />} 
-              color="#673ab7"
+              color="#E86868"
             />
           )}
         </Grid>
-
+      </Grid>
+      {/* Sections supplémentaires */}
+      <Grid container spacing={3} sx={{ mt: 2 }}>
         {/* Banner Section Inspired by Google Partner Dashboard */}
         {/* <Grid item xs={12}>
           <Card sx={{ bgcolor: 'white', position: 'relative', overflow: 'visible', mt: 4 }}>
@@ -277,24 +297,24 @@ const DashboardHome: React.FC = () => {
                         <ListItemText
                           primary={
                             <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                              {group.nomEntreprise}
+                              {group.nomEntreprise || 'Sans nom'}
                             </Typography>
                           }
                           secondary={
                             <React.Fragment>
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                {group.email}
+                              <Typography component="span" variant="caption" color="text.secondary" display="block">
+                                {group.email || 'Pas d\'email'}
                               </Typography>
-                              <Box component="span" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
+                              <Typography component="span" variant="caption" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
                                 <Chip 
-                                  label={`${group.user_count} utilisateurs`} 
+                                  label={`${group.user_count || 0} utilisateurs`} 
                                   size="small" 
                                   variant="outlined"
                                 />
-                                <Typography variant="caption" color="text.secondary">
-                                  {formatDate(group.createdAt)}
+                                <Typography component="span" variant="caption" color="text.secondary">
+                                  {group.createdAt && formatDate(group.createdAt)}
                                 </Typography>
-                              </Box>
+                              </Typography>
                             </React.Fragment>
                           }
                         />
@@ -351,26 +371,26 @@ const DashboardHome: React.FC = () => {
                         <ListItemText
                           primary={
                             <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                              {group.nomEntreprise}
+                              {group.nomEntreprise || 'Sans nom'}
                             </Typography>
                           }
                           secondary={
-                            <Box>
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                {group.email}
+                            <React.Fragment>
+                              <Typography component="span" variant="caption" color="text.secondary" display="block">
+                                {group.email || 'Pas d\'email'}
                               </Typography>
-                              <Box sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
+                              <Typography component="span" variant="caption" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
                                 <Chip 
-                                  label={`${group.days_remaining} jour${group.days_remaining > 1 ? 's' : ''} restant${group.days_remaining > 1 ? 's' : ''}`}
+                                  label={`${Math.ceil((new Date(group.subscriptionEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} jours restants`}
                                   size="small" 
                                   color="warning"
                                   variant="outlined"
                                 />
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography component="span" variant="caption" color="text.secondary">
                                   Expire le {new Date(group.subscriptionEnd).toLocaleDateString('fr-FR')}
                                 </Typography>
-                              </Box>
-                            </Box>
+                              </Typography>
+                            </React.Fragment>
                           }
                         />
                       </ListItem>
