@@ -120,16 +120,16 @@ const DashboardLayout: React.FC = () => {
     { text: 'Promo Codes', icon: <LocalOfferIcon />, path: '/promo-codes' },
     // { text: 'Produits', icon: <Inventory2Icon />, path: '/products' },
     // { text: 'Gestion Ventes', icon: <ShoppingCartIcon />, path: '/sales-management' },
-    { 
-      text: 'Clients', 
-      icon: <PeopleIcon />, 
-      hasSubmenu: true,
-      submenu: [
-        { text: 'Tous les Clients', path: '/clients' },
-        { text: 'Clients Débiteurs', icon: <MoneyOffIcon />, path: '/clients/debts' },
-        { text: 'Clients Inactifs', icon: <PersonOffIcon />, path: '/clients/inactive' }
-      ]
-    },
+    // { 
+    //   text: 'Clients', 
+    //   icon: <PeopleIcon />, 
+    //   hasSubmenu: true,
+    //   submenu: [
+    //     { text: 'Tous les Clients', path: '/clients' },
+    //     { text: 'Clients Débiteurs', icon: <MoneyOffIcon />, path: '/clients/debts' },
+    //     { text: 'Clients Inactifs', icon: <PersonOffIcon />, path: '/clients/inactive' }
+    //   ]
+    // },
     // { text: 'Aperçu des Ventes', icon: <TrendingUpIcon />, path: '/sales' },
     // { text: 'Factures', icon: <ReceiptIcon />, path: '/invoices' },
     // { 
@@ -335,11 +335,6 @@ const DashboardLayout: React.FC = () => {
                           }
                         }}
                       >
-                        {subItem.icon && (
-                          <ListItemIcon sx={{ minWidth: 0, mr: 2, justifyContent: 'center', fontSize: 20 }}>
-                            {subItem.icon}
-                          </ListItemIcon>
-                        )}
                         <ListItemText 
                           primary={subItem.text} 
                           primaryTypographyProps={{ fontSize: 13, fontWeight: 400 }} 
