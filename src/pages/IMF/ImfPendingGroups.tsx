@@ -55,7 +55,7 @@ const ImfPendingGroups: React.FC = () => {
   const fetchPendingGroups = async (currentPage: number, limit: number) => {
     setLoading(true);
     try {
-      const response = await api.get<PaginatedResponse>('/imf/admin/groups/pending', {
+      const response = await api.get<PaginatedResponse>('/admin/imf/groups/pending', {
         params: { page: currentPage + 1, limit }
       });
       setGroups(response.data.data);
@@ -121,7 +121,7 @@ const ImfPendingGroups: React.FC = () => {
     if (!selectedGroup) return;
 
     try {
-      await api.patch(`/imf/admin/group/${selectedGroup.id}/approve`);
+      await api.patch(`/admin/imf/group/${selectedGroup.id}/approve`);
       showSuccess('Groupe IMF validé avec succès');
       setDialogOpen(false);
       setSelectedGroup(null);

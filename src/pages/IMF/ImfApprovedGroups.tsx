@@ -68,7 +68,7 @@ const ImfApprovedGroups: React.FC = () => {
   const fetchApprovedGroups = async (currentPage: number, limit: number) => {
     setLoading(true);
     try {
-      const response = await api.get<PaginatedResponse>('/imf/admin/groups/approved', {
+      const response = await api.get<PaginatedResponse>('/admin/imf/groups/approved', {
         params: { page: currentPage + 1, limit }
       });
       setGroups(response.data.data);

@@ -103,7 +103,7 @@ const Login: React.FC = () => {
             Connexion
           </Typography>
           <Typography variant="body1" sx={{ color: '#202124' }}>
-            Accéder à ToonaShop Admin Console
+            Accéder à ToonaSHOP Admin Console
           </Typography>
         </Box>
 

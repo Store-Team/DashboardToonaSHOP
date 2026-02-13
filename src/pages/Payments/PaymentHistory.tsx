@@ -95,15 +95,11 @@ const PaymentHistory: React.FC = () => {
       setPayments(response.data.data);
       setTotalCount(response.data.total);
     } catch (err: any) {
+      console.error('❌ Error fetching payments:', err);
       showError(err?.response?.data?.error || 'Erreur lors du chargement des paiements');
-      // Mock data for development
-      const mockPayments: Payment[] = [
-        { id: 1, status: 'approved', transactionId: '2445104189', reference: 'OCETRASSID', amount: '35000', provider: 'MPESA', plan: 'pro', months: 3, createdAt: '2026-01-15 10:00:00', orderCurrency: 'XAF', statusDescription: '', group: { id: 101, nomEntreprise: 'Tech Solutions Sarl', email: 'tech@solutions.com' } },
-        { id: 2, status: 'approved', transactionId: '2445104190', reference: 'OPMXTRAID', amount: '25000', provider: 'OM', plan: 'basic', months: 3, createdAt: '2026-01-20 14:30:00', orderCurrency: 'XAF', statusDescription: '', group: { id: 102, nomEntreprise: 'Commerce Plus', email: 'contact@commerceplus.com' } },
-        { id: 3, status: 'failed', transactionId: '2445104191', reference: 'FLTRANXYZ', amount: '50000', provider: 'MPESA', plan: 'enterprise', months: 6, createdAt: '2026-01-25 09:15:00', orderCurrency: 'XAF', statusDescription: '', group: { id: 103, nomEntreprise: 'AgriPro Group', email: 'info@agripro.com' } }
-      ];
-      setPayments(mockPayments);
-      setTotalCount(mockPayments.length);
+      // Afficher une liste vide en cas d'erreur
+      setPayments([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -239,7 +235,10 @@ const PaymentHistory: React.FC = () => {
                       <Typography variant="caption" color="text.secondary">{payment.group.email}</Typography>
                     </TableCell>
                     <TableCell sx={{ fontWeight: 600 }}>
-                      {parseFloat(payment.amount).toFixed(2)} {payment.orderCurrency}
+                      {payment.amount && !isNaN(parseFloat(payment.amount)) 
+                        ? `${parseFloat(payment.amount).toFixed(2)} ${payment.orderCurrency || ''}` 
+                        : 'N/A'
+                      }
                     </TableCell>
                     <TableCell>
                       <Chip label={payment.provider} size="small" variant="outlined" />

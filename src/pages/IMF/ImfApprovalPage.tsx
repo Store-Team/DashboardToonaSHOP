@@ -76,7 +76,7 @@ const ImfApprovalPage: React.FC = () => {
 
     setLoading(true);
     try {
-      await api.patch(`/imf/admin/group/${groupInfo.id}/approve`);
+      await api.patch(`/admin/imf/group/${groupInfo.id}/approve`);
       showSuccess('Groupe IMF validé avec succès');
       setGroupInfo({ ...groupInfo, status: 'approved' });
     } catch (err: any) {

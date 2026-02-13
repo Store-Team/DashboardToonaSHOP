@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -30,7 +30,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem
+  MenuItem,
+  Tooltip
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -43,7 +44,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Payment as PaymentIcon,
   PersonAdd as PersonAddIcon,
-  CalendarMonth as CalendarIcon
+  CalendarMonth as CalendarIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import api from '../../services/api/axios';
 import * as adminService from '../../services/adminService';
@@ -78,36 +80,49 @@ const GroupDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
-  const [days, setDays] = useState(30);
+  const [months, setMonths] = useState(3);
+  const [plan, setPlan] = useState('pro');
   const { showSuccess, showError } = useSnackbar();
 
-  useEffect(() => {
-    const fetchGroupDetails = async () => {
-      if (!id) return;
-      setLoading(true);
-      console.log('[GroupDetails] Fetching data for group ID:', id);
-      
-      let groupData: Group | null = null;
-      
+  // Fonction réutilisable pour récupérer les données du groupe avec fallback
+  const fetchGroupData = useCallback(async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    console.log('[GroupDetails] Fetching data for group ID:', id);
+    
+    try {
+      // Essayer d'abord de récupérer le groupe directement
+      const groupData = await adminService.getGroupById(Number(id));
+      console.log('[GroupDetails] ✅ Successfully fetched group data directly:', groupData);
+      setGroup(groupData);
+    } catch (directErr) {
+      console.log('[GroupDetails] ⚠️ Direct fetch failed, trying to get from groups list');
       try {
-        // Essayer d'abord de récupérer le groupe directement
-        groupData = await adminService.getGroupById(Number(id));
-        console.log('[GroupDetails] Successfully fetched group data directly:', groupData);
-      } catch (directErr) {
-        console.log('[GroupDetails] Direct fetch failed, trying to get from groups list');
-        try {
-          // Si l'endpoint direct n'existe pas, récupérer depuis la liste
-          const allGroups = await adminService.getAllGroups(1, 100);
-          groupData = allGroups.data.find(g => g.id === Number(id)) || null;
-          console.log('[GroupDetails] Found group in list:', groupData);
-        } catch (listErr) {
-          console.error('[GroupDetails] Failed to fetch from list too:', listErr);
-        }
+        // Si l'endpoint direct n'existe pas, récupérer depuis la liste
+        const allGroups = await adminService.getAllGroups(1, 100);
+        const groupData = allGroups.data.find(g => g.id === Number(id)) || null;
+        console.log('[GroupDetails] ✅ Found group in list:', groupData);
+        setGroup(groupData);
+      } catch (listErr) {
+        console.error('[GroupDetails] ❌ Failed to fetch from list too:', listErr);
+        showError('Erreur lors du chargement du groupe');
+        setGroup(null);
       }
-      
-      if (!groupData) {
-        throw new Error('Group not found');
-      }
+    } finally {
+      setLoading(false);
+    }
+  }, [id, showError]);
+
+  // Charger les données du groupe au montage et quand l'ID change
+  useEffect(() => {
+    fetchGroupData();
+  }, [fetchGroupData]);
+
+  // Charger les données associées (users, payments)
+  useEffect(() => {
+    const fetchRelatedData = async () => {
+      if (!id) return;
       
       try {
         // Fetch users and payments in parallel
@@ -116,74 +131,25 @@ const GroupDetails: React.FC = () => {
           adminService.getGroupPayments(Number(id))
         ]);
 
-        setGroup(groupData);
         setNewUsers(usersData.data || []);
         setPayments(paymentsData.data || []);
       } catch (err: any) {
-        console.error('[GroupDetails] Error fetching group details:', {
+        console.error('[GroupDetails] Error fetching related data:', {
           error: err,
           response: err?.response,
           status: err?.response?.status,
           data: err?.response?.data,
           url: err?.config?.url
         });
-        showError(err?.response?.data?.error || 'Erreur lors du chargement des détails');
-        // Mock data for development
-        setGroup({
-          id: Number(id),
-          nomEntreprise: 'Tech Solutions Sarl',
-          contact: '+237 6 99 88 77 66',
-          email: 'contact@techsolutions.cm',
-          nrccm: 'RC/DLA/2023/B/12345',
-          user_count: 15,
-          point_of_sale_count: 3,
-          warehouse_count: 2,
-          isPaid: true,
-          subscriptionEnd: '2026-06-30 23:59:59'
-        });
-        setNewUsers([
-          { id: 1, numero: 'USER001', nom: 'Kamga', prenom: 'Paul', roles: ['user'], created_at: '2026-01-28 10:00:00' },
-          { id: 2, numero: 'USER002', nom: 'Mbida', prenom: 'Marie', roles: ['user'], created_at: '2026-01-29 14:30:00' }
-        ]);
-        setPayments([
-          {
-            id: 1,
-            status: 'approved',
-            transactionId: '2445104189',
-            reference: 'OCETRASSID',
-            amount: '35000',
-            provider: 'MPESA',
-            plan: 'pro',
-            months: 3,
-            createdAt: '2026-01-15 10:00:00'
-          }
-        ]);
-      } finally {
-        setLoading(false);
+        
+        // Afficher des listes vides en cas d'erreur
+        setNewUsers([]);
+        setPayments([]);
       }
     };
 
-    fetchGroupDetails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchRelatedData();
   }, [id]);
-
-  // Fonction réutilisable pour récupérer les données du groupe avec fallback
-  const fetchGroupData = async (groupId: number): Promise<Group | null> => {
-    try {
-      // Essayer d'abord de récupérer le groupe directement
-      return await adminService.getGroupById(groupId);
-    } catch (directErr) {
-      console.log('[GroupDetails] Direct fetch failed, trying to get from groups list');
-      try {
-        // Si l'endpoint direct n'existe pas, récupérer depuis la liste
-        const allGroups = await adminService.getAllGroups(1, 100);
-        return allGroups.data.find(g => g.id === groupId) || null;
-      } catch (listErr) {
-        console.error('[GroupDetails] Failed to fetch from list too:', listErr);
-        return null;
-      }
-    }
-  };
 
   const handleToggleStatus = async (activate: boolean) => {
     if (!group) return;
@@ -195,64 +161,31 @@ const GroupDetails: React.FC = () => {
       } else {
         await adminService.disableGroup(group.id);
       }
+      
       showSuccess(`Groupe ${activate ? 'activé' : 'désactivé'} avec succès`);
       
-      // Mise à jour optimiste de l'état local (gérer isPaid et isActive)
-      console.log('[GroupDetails] Optimistic update - setting isPaid and isActive to:', activate);
-      setGroup(prev => prev ? { 
-        ...prev, 
-        isPaid: activate,
-        isActive: activate 
-      } : null);
+      // Rafraîchir les données
+      await fetchGroupData();
       
-      // Attendre un peu pour laisser le backend traiter la requête
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Refresh group data avec fallback
-      console.log('[GroupDetails] Refreshing group data after status change...');
-      const refreshedGroup = await fetchGroupData(group.id);
-      if (refreshedGroup) {
-        console.log('[GroupDetails] Refreshed group data:', {
-          id: refreshedGroup.id,
-          isPaid: refreshedGroup.isPaid,
-          isActive: refreshedGroup.isActive,
-          nomEntreprise: refreshedGroup.nomEntreprise
-        });
-        
-        // Fusionner les données rafraîchies avec la mise à jour optimiste
-        // Si le backend ne retourne pas les champs mis à jour, on garde notre valeur
-        setGroup({
-          ...refreshedGroup,
-          isPaid: refreshedGroup.isPaid !== undefined ? refreshedGroup.isPaid : activate,
-          isActive: refreshedGroup.isActive !== undefined ? refreshedGroup.isActive : activate
-        });
-      } else {
-        console.warn('[GroupDetails] Could not refresh group data, keeping optimistic update');
-      }
     } catch (err: any) {
       console.error('[GroupDetails] Error toggling status:', err);
       showError(err?.response?.data?.error || 'Erreur lors de la mise à jour');
-      // Annuler la mise à jour optimiste en cas d'erreur
-      setGroup(prev => prev ? { 
-        ...prev, 
-        isPaid: !activate,
-        isActive: !activate 
-      } : null);
     }
   };
 
   const handleExtendSubscription = async () => {
     if (!group) return;
     try {
-      await adminService.extendSubscription(group.id, { days });
+      await api.post(`/admin/group/${group.id}/subscription/extend`, { 
+        months, 
+        plan 
+      });
       showSuccess('Abonnement étendu avec succès');
       setExtendDialogOpen(false);
       
-      // Refresh group data avec fallback
-      const refreshedGroup = await fetchGroupData(group.id);
-      if (refreshedGroup) {
-        setGroup(refreshedGroup);
-      }
+      // Rafraîchir les données
+      await fetchGroupData();
+      
     } catch (err: any) {
       showError(err?.response?.data?.error || 'Erreur lors de l\'extension');
     }
@@ -338,6 +271,13 @@ const GroupDetails: React.FC = () => {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="Rafraîchir les données">
+            <span>
+              <IconButton onClick={fetchGroupData} disabled={loading} color="primary">
+                <RefreshIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
           <Button variant="outlined" startIcon={<EditIcon />}>
             Modifier
           </Button>
@@ -521,7 +461,7 @@ const GroupDetails: React.FC = () => {
                         <Typography variant="caption" color="text.secondary">TX: {payment.transactionId}</Typography>
                       </TableCell>
                       <TableCell sx={{ fontWeight: 600 }}>
-                        {parseFloat(payment.amount).toLocaleString()} XAF
+                        {parseFloat(payment.amount).toLocaleString()} USD
                       </TableCell>
                       <TableCell>
                         <Chip label={payment.provider} size="small" variant="outlined" />
@@ -548,20 +488,33 @@ const GroupDetails: React.FC = () => {
               <TextField
                 select
                 fullWidth
-                label="Durée d'extension"
-                value={days}
-                onChange={(e) => setDays(Number(e.target.value))}
+                label="Durée d'extension (Mois)"
+                value={months}
+                onChange={(e) => setMonths(Number(e.target.value))}
               >
-                <MenuItem value={7}>7 Jours</MenuItem>
-                <MenuItem value={15}>15 Jours</MenuItem>
-                <MenuItem value={30}>30 Jours (1 Mois)</MenuItem>
-                <MenuItem value={60}>60 Jours (2 Mois)</MenuItem>
-                <MenuItem value={90}>90 Jours (3 Mois)</MenuItem>
-                <MenuItem value={180}>180 Jours (6 Mois)</MenuItem>
-                <MenuItem value={365}>365 Jours (1 An)</MenuItem>
+                <MenuItem value={1}>1 Mois</MenuItem>
+                <MenuItem value={2}>2 Mois</MenuItem>
+                <MenuItem value={3}>3 Mois</MenuItem>
+                <MenuItem value={6}>6 Mois</MenuItem>
+                <MenuItem value={12}>12 Mois (1 An)</MenuItem>
               </TextField>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                L'abonnement sera étendu de {days} jour(s) à partir de la date d'expiration actuelle
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                select
+                fullWidth
+                label="Plan"
+                value={plan}
+                onChange={(e) => setPlan(e.target.value)}
+              >
+                <MenuItem value="basic">Basic</MenuItem>
+                <MenuItem value="pro">Pro</MenuItem>
+                <MenuItem value="enterprise">Enterprise</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="caption" color="text.secondary">
+                L'abonnement sera étendu de {months} mois avec le plan {plan}
               </Typography>
             </Grid>
           </Grid>

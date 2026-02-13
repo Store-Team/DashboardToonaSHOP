@@ -83,12 +83,44 @@ export interface ExtendSubscriptionRequest {
   days: number;
 }
 
+export interface PaymentStats {
+  filters?: Record<string, any>;
+  totals: {
+    total: number;
+    total_amount: number;
+    approved_count: number;
+    failed_count: number;
+    timeout_count: number;
+  };
+  by_status: Array<{
+    status: string;
+    count: number;
+    amount: number;
+  }>;
+  by_provider: Array<{
+    provider: string;
+    count: number;
+    amount: number;
+  }>;
+}
+
 /**
  * Récupérer les statistiques globales
  */
 export const getAdminStats = async (): Promise<AdminStats> => {
-  const response = await api.get<AdminStats>('/admin/stats');
-  return response.data;
+  const response = await api.get<any>('/admin/stats');
+  
+  // Transformer snake_case du backend en camelCase
+  const data = response.data;
+  return {
+    totalGroups: data.total_groups || data.totalGroups || 0,
+    activeGroups: data.active_groups || data.activeGroups || 0,
+    totalRevenue: data.total_revenue || data.totalRevenue || 0,
+    totalUsers: data.total_users || data.totalUsers || 0,
+    activeSubscriptions: data.active_subscriptions || data.activeSubscriptions || 0,
+    trialGroups: data.trial_groups || data.trialGroups || 0,
+    trends: data.trends || undefined
+  };
 };
 
 /**
@@ -133,10 +165,45 @@ export const searchGroups = async (query: string, page: number = 1, limit: numbe
 
 /**
  * Récupérer les détails d'un groupe
+ * Utilise une stratégie de fallback :
+ * 1. Essaie /admin/group/:id (singulier)
+ * 2. Si échec, essaie /admin/groups/:id (pluriel)
+ * 3. Si échec, récupère depuis la liste et filtre
  */
 export const getGroupById = async (id: number): Promise<Group> => {
-  const response = await api.get<Group>(`/admin/group/${id}`);
-  return response.data;
+  // Stratégie 1 : Endpoint singulier
+  try {
+    const response = await api.get<Group>(`/admin/group/${id}`);
+    console.log(`✅ [adminService] Group ${id} récupéré via /admin/group/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.warn(`⚠️ [adminService] /admin/group/${id} échoué (${error.response?.status}), tentative avec pluriel...`);
+  }
+
+  // Stratégie 2 : Endpoint pluriel
+  try {
+    const response = await api.get<Group>(`/admin/groups/${id}`);
+    console.log(`✅ [adminService] Group ${id} récupéré via /admin/groups/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.warn(`⚠️ [adminService] /admin/groups/${id} échoué (${error.response?.status}), fallback sur liste...`);
+  }
+
+  // Stratégie 3 : Récupérer depuis la liste
+  try {
+    const response = await api.get<PaginatedResponse<Group>>('/admin/groups', {
+      params: { page: 1, limit: 100 }
+    });
+    const group = response.data.data.find(g => g.id === id);
+    if (group) {
+      console.log(`✅ [adminService] Group ${id} trouvé dans la liste`);
+      return group;
+    }
+    throw new Error(`Group ${id} non trouvé dans la liste`);
+  } catch (error: any) {
+    console.error(`❌ [adminService] Impossible de récupérer le groupe ${id}:`, error);
+    throw new Error(`Groupe ${id} introuvable`);
+  }
 };
 
 /**
@@ -184,6 +251,14 @@ export const getGroupPayments = async (groupId: number, page: number = 1, limit:
 };
 
 /**
+ * Récupérer les statistiques de paiement MultiPay
+ */
+export const getPaymentStats = async (): Promise<PaymentStats> => {
+  const response = await api.get<PaymentStats>('/multipay/subscription/stats');
+  return response.data;
+};
+
+/**
  * Étendre l'abonnement d'un groupe
  */
 export const extendSubscription = async (groupId: number, data: ExtendSubscriptionRequest): Promise<void> => {
@@ -202,5 +277,6 @@ export default {
   disableGroup,
   getAllPayments,
   getGroupPayments,
+  getPaymentStats,
   extendSubscription,
 };

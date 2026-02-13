@@ -56,9 +56,11 @@ interface Stats {
 
 const DashboardHome: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [paymentStats, setPaymentStats] = useState<adminService.PaymentStats | null>(null);
   const [newGroups, setNewGroups] = useState<adminService.Group[]>([]);
   const [expiringGroups, setExpiringGroups] = useState<adminService.Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPaymentStats, setLoadingPaymentStats] = useState(true);
   const [loadingNewGroups, setLoadingNewGroups] = useState(true);
   const [loadingExpiring, setLoadingExpiring] = useState(true);
   const navigate = useNavigate();
@@ -69,6 +71,7 @@ const DashboardHome: React.FC = () => {
     // Ne charger les données que si l'utilisateur est authentifié
     if (!isAuthenticated) {
       setLoading(false);
+      setLoadingPaymentStats(false);
       setLoadingNewGroups(false);
       setLoadingExpiring(false);
       return;
@@ -134,9 +137,30 @@ const DashboardHome: React.FC = () => {
       }
     };
 
+    const fetchPaymentStats = async () => {
+      try {
+        const response = await adminService.getPaymentStats();
+        console.log('Payment Stats API Response:', response);
+        if (isMounted) {
+          setPaymentStats(response);
+        }
+      } catch (err: any) {
+        console.error('Erreur lors du chargement des stats de paiement:', err);
+        if (isMounted) {
+          // Ne pas afficher d'erreur car ce n'est pas critique
+          setPaymentStats(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingPaymentStats(false);
+        }
+      }
+    };
+
     fetchStats();
     fetchNewGroups();
     fetchExpiringGroups();
+    fetchPaymentStats();
 
     return () => {
       isMounted = false;
@@ -222,38 +246,131 @@ const DashboardHome: React.FC = () => {
           )}
         </Grid>
       </Grid>
+
+      {/* Payment Stats Section */}
+      <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid item xs={12}>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            Statistiques des Paiements de ce groupe
+          </Typography>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          {loadingPaymentStats ? <Skeleton variant="rectangular" height={160} /> : (
+            <StatCard 
+              title="Total Paiements" 
+              value={paymentStats?.totals?.total || 0} 
+              trend={0}
+              icon={<TrendingUp />} 
+              color="#4CAF50"
+            />
+          )}
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          {loadingPaymentStats ? <Skeleton variant="rectangular" height={160} /> : (
+            <StatCard 
+              title="Montant Total" 
+              value={`${(paymentStats?.totals?.total_amount || 0).toFixed(2)} USD`} 
+              trend={0}
+              icon={<TrendingUp />} 
+              color="#2196F3"
+            />
+          )}
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          {loadingPaymentStats ? <Skeleton variant="rectangular" height={160} /> : (
+            <StatCard 
+              title="Approuvés" 
+              value={paymentStats?.totals?.approved_count || 0} 
+              trend={0}
+              icon={<TrendingUp />} 
+              color="#4CAF50"
+            />
+          )}
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          {loadingPaymentStats ? <Skeleton variant="rectangular" height={160} /> : (
+            <StatCard 
+              title="Échoués" 
+              value={paymentStats?.totals?.failed_count || 0} 
+              trend={0}
+              icon={<Warning />} 
+              color="#F44336"
+            />
+          )}
+        </Grid>
+      </Grid>
+
+      {/* Payment Breakdown Section */}
+      {paymentStats && (
+        <Grid container spacing={3} sx={{ mt: 1 }}>
+          <Grid item xs={12}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+              Répartition des Paiements
+            </Typography>
+          </Grid>
+          
+          {/* By Provider Cards */}
+          
+
+          {/* By Status Cards */}
+          {paymentStats.by_status?.map((status, index) => (
+            <Grid item xs={12} sm={6} md={2} key={`status-${index}`}>
+              <Card sx={{ 
+              }}>
+                <CardContent>
+                  <Typography variant="caption" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Typography variant="h6" sx={{ 
+                    fontWeight: 600, 
+                    mt: 0.5,
+                    textTransform: 'capitalize',
+                    color: status.status === 'approved' ? '#4CAF50' : 
+                           status.status === 'failed' ? '#F44336' : 
+                           '#FF9800'
+                  }}>
+                    {status.status}
+                  </Typography>
+                  <Typography variant="h5" sx={{ mt: 1 }}>
+                    {status.count}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    ${status.amount.toFixed(2)}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+          {paymentStats.by_provider?.slice(0, 3).map((provider, index) => (
+          <Grid item xs={12} sm={6} md={2} key={`provider-${index}`}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Provider
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 600, mt: 0.5 }}>
+                      {provider.provider}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {provider.count} transactions
+                    </Typography>
+                    <Typography variant="h6" color="primary" sx={{ mt: 0.5 }}>
+                      ${provider.amount.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <TrendingUp sx={{ fontSize: 40, color: '#9C27B0', opacity: 0.3 }} />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+        </Grid>
+      )}
+
       {/* Sections supplémentaires */}
       <Grid container spacing={3} sx={{ mt: 2 }}>
-        {/* Banner Section Inspired by Google Partner Dashboard */}
-        {/* <Grid item xs={12}>
-          <Card sx={{ bgcolor: 'white', position: 'relative', overflow: 'visible', mt: 4 }}>
-            <CardContent sx={{ p: 4, display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="h3" sx={{ fontWeight: 700, mb: 2, color: '#202124' }}>
-                  Présentation du <span style={{ color: '#0A73B8' }}>réseau de partenaires</span> ToonaShop
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mb: 4 }}>
-                  Découvrez de nouveaux outils puissants et une interface simplifiée conçus pour accélérer votre croissance avec ToonaERP.
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Button variant="contained" size="large">Explorer les ressources</Button>
-                  <Button variant="outlined" size="large">FAQ Administrateur</Button>
-                </Box>
-              </Box>
-              <Box 
-                component="img" 
-                src="https://picsum.photos/400/300?business=1" 
-                sx={{ 
-                  width: 350, 
-                  height: 'auto', 
-                  borderRadius: '100px 10px 100px 10px',
-                  display: { xs: 'none', md: 'block' }
-                }} 
-              />
-            </CardContent>
-          </Card>
-        </Grid> */}
-
         {/* Nouveaux groupes */}
         <Grid item xs={12} md={6}>
           <Card sx={{ height: '100%' }}>
@@ -305,7 +422,7 @@ const DashboardHome: React.FC = () => {
                               <Typography component="span" variant="caption" color="text.secondary" display="block">
                                 {group.email || 'Pas d\'email'}
                               </Typography>
-                              <Typography component="span" variant="caption" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
+                              <Box component="span" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
                                 <Chip 
                                   label={`${group.user_count || 0} utilisateurs`} 
                                   size="small" 
@@ -314,7 +431,7 @@ const DashboardHome: React.FC = () => {
                                 <Typography component="span" variant="caption" color="text.secondary">
                                   {group.createdAt && formatDate(group.createdAt)}
                                 </Typography>
-                              </Typography>
+                              </Box>
                             </React.Fragment>
                           }
                         />
@@ -379,7 +496,7 @@ const DashboardHome: React.FC = () => {
                               <Typography component="span" variant="caption" color="text.secondary" display="block">
                                 {group.email || 'Pas d\'email'}
                               </Typography>
-                              <Typography component="span" variant="caption" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
+                              <Box component="span" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
                                 <Chip 
                                   label={`${Math.ceil((new Date(group.subscriptionEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} jours restants`}
                                   size="small" 
@@ -389,7 +506,7 @@ const DashboardHome: React.FC = () => {
                                 <Typography component="span" variant="caption" color="text.secondary">
                                   Expire le {new Date(group.subscriptionEnd).toLocaleDateString('fr-FR')}
                                 </Typography>
-                              </Typography>
+                              </Box>
                             </React.Fragment>
                           }
                         />

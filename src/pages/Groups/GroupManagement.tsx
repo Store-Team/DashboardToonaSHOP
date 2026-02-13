@@ -29,7 +29,8 @@ import {
   Visibility as ViewIcon,
   Block as BlockIcon,
   CheckCircle as ActiveIcon,
-  Update as UpdateIcon
+  Update as UpdateIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api/axios';
@@ -69,42 +70,38 @@ const GroupManagement: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const { showSuccess, showError } = useSnackbar();
 
-  const fetchGroups = useCallback(async (currentPage: number, limit: number, search?: string) => {
+  // Fonction de chargement des groupes
+  const fetchGroups = useCallback(async () => {
     setLoading(true);
     try {
       let response;
-      if (search && search.length >= 2) {
+      if (searchQuery && searchQuery.length >= 2) {
         // Utiliser l'endpoint de recherche
         response = await api.get<PaginatedResponse>('/admin/groups/search', {
-          params: { q: search, page: currentPage + 1, limit }
+          params: { q: searchQuery, page: page + 1, limit: rowsPerPage }
         });
       } else {
         // Utiliser l'endpoint de liste normale
         response = await api.get<PaginatedResponse>('/admin/groups', {
-          params: { page: currentPage + 1, limit }
+          params: { page: page + 1, limit: rowsPerPage }
         });
       }
       setGroups(response.data.data);
       setTotalCount(response.data.total);
     } catch (err: any) {
+      console.error('Erreur lors du chargement des groupes:', err);
       showError(err?.response?.data?.error || 'Erreur lors du chargement des groupes');
-      // Mock data for development
-      const mockGroups: Group[] = [
-        { id: 1, nomEntreprise: 'Tech Solutions Sarl', contact: '+237699887766', email: 'contact@techsolutions.cm', nrccm: 'RC/DLA/2023/B/12345', user_count: 15, point_of_sale_count: 3, warehouse_count: 2, isPaid: true, subscriptionEnd: '2026-06-30 23:59:59' },
-        { id: 2, nomEntreprise: 'Commerce Plus', contact: '+237677554433', email: 'info@commerceplus.cm', nrccm: 'RC/DLA/2023/B/54321', user_count: 8, point_of_sale_count: 2, warehouse_count: 1, isPaid: true, subscriptionEnd: '2026-02-08 23:59:59' },
-        { id: 3, nomEntreprise: 'AgriPro Group', contact: '+237655443322', email: 'contact@agripro.cm', nrccm: 'RC/DLA/2024/A/11111', user_count: 5, point_of_sale_count: 1, warehouse_count: 1, isPaid: false, subscriptionEnd: '2026-01-15 23:59:59' }
-      ];
-      setGroups(mockGroups);
-      setTotalCount(mockGroups.length);
+      // Afficher une liste vide en cas d'erreur
+      setGroups([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [page, rowsPerPage, searchQuery, showError]);
 
   useEffect(() => {
-    fetchGroups(page, rowsPerPage, searchQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, rowsPerPage, searchQuery]);
+    fetchGroups();
+  }, [fetchGroups]);
 
   // Debounce search
   useEffect(() => {
@@ -140,7 +137,10 @@ const GroupManagement: React.FC = () => {
       const endpoint = activate ? `/admin/group/${selectedGroup.id}/active` : `/admin/group/${selectedGroup.id}/disable`;
       await api.post(endpoint);
       showSuccess(`Groupe ${activate ? 'activé' : 'désactivé'} avec succès`);
-      fetchGroups(page, rowsPerPage, searchQuery);
+      
+      // Rafraîchir la liste
+      await fetchGroups();
+      
       handleMenuClose();
     } catch (err: any) {
       showError(err?.response?.data?.error || 'Erreur lors de la mise à jour du statut');
@@ -193,9 +193,18 @@ const GroupManagement: React.FC = () => {
             {totalCount} entreprise{totalCount > 1 ? 's' : ''} enregistrée{totalCount > 1 ? 's' : ''}
           </Typography>
         </Box>
-        <Button variant="outlined" startIcon={<FilterIcon />}>
-          Filtrer
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="Rafraîchir les données">
+            <span>
+              <IconButton onClick={fetchGroups} disabled={loading} color="primary">
+                <RefreshIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Button variant="outlined" startIcon={<FilterIcon />}>
+            Filtrer
+          </Button>
+        </Box>
       </Box>
 
       <Paper sx={{ mb: 3, p: 2 }}>

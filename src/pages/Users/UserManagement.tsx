@@ -40,8 +40,8 @@ interface User {
   prenom: string;
   roles: string[];
   is_enable: boolean;
-  point_of_sale?: { id: number; name: string };
-  entrepot?: { id: number; name: string };
+  // point_of_sale?: { id: number; name: string };
+  // entrepot?: { id: number; name: string };
 }
 
 interface PaginatedResponse {
@@ -66,9 +66,7 @@ const UserManagement: React.FC = () => {
     nom: '',
     prenom: '',
     roles: 'ROLE_USER' as string,
-    isEnable: true,
-    warehouse_id: '',
-    point_of_sale_id: ''
+    isEnable: true
   });
   const { showSuccess, showError } = useSnackbar();
 
@@ -91,26 +89,8 @@ const UserManagement: React.FC = () => {
           prenom: 'Merdi',
           roles: ['ROLE_USER'],
           is_enable: true,
-          point_of_sale: { id: 3, name: 'Bar Principal' }
+          // point_of_sale: { id: 3, name: 'Bar Principal' }
         },
-        {
-          id: 2,
-          numero: '0823456789',
-          nom: 'Tshimanga',
-          prenom: 'Marie',
-          roles: ['ROLE_MANAGER'],
-          is_enable: true,
-          entrepot: { id: 2, name: 'Entrepôt Central' }
-        },
-        {
-          id: 3,
-          numero: '0834567890',
-          nom: 'Kabongo',
-          prenom: 'Paul',
-          roles: ['ROLE_USER'],
-          is_enable: false,
-          point_of_sale: { id: 1, name: 'Point de Vente Nord' }
-        }
       ];
       setUsers(mockData);
       setTotalCount(mockData.length);
@@ -144,8 +124,6 @@ const UserManagement: React.FC = () => {
         prenom: user.prenom,
         roles: user.roles[0] || 'ROLE_USER',
         isEnable: user.is_enable,
-        warehouse_id: user.entrepot?.id.toString() || '',
-        point_of_sale_id: user.point_of_sale?.id.toString() || ''
       });
     } else {
       setEditMode(false);
@@ -157,8 +135,6 @@ const UserManagement: React.FC = () => {
         prenom: '',
         roles: 'ROLE_USER',
         isEnable: true,
-        warehouse_id: '',
-        point_of_sale_id: ''
       });
     }
     setDialogOpen(true);
@@ -188,8 +164,6 @@ const UserManagement: React.FC = () => {
         prenom: formData.prenom,
         roles: [formData.roles],
         ...(editMode && { isEnable: formData.isEnable }),
-        ...(formData.warehouse_id && { warehouse_id: parseInt(formData.warehouse_id) }),
-        ...(formData.point_of_sale_id && { point_of_sale_id: parseInt(formData.point_of_sale_id) })
       };
 
       if (editMode && selectedUser) {
@@ -279,13 +253,6 @@ const UserManagement: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {user.point_of_sale 
-                          ? `PdV: ${user.point_of_sale.name}`
-                          : user.entrepot
-                          ? `Entrepôt: ${user.entrepot.name}`
-                          : 'Non affecté'}
-                      </Typography>
                     </TableCell>
                     <TableCell>
                       <Chip 
@@ -357,7 +324,7 @@ const UserManagement: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={12}>
               <FormControl fullWidth>
                 <InputLabel>Rôle</InputLabel>
                 <Select
@@ -386,24 +353,6 @@ const UserManagement: React.FC = () => {
                 </FormControl>
               </Grid>
             )}
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="ID Entrepôt (optionnel)"
-                type="number"
-                value={formData.warehouse_id}
-                onChange={(e) => setFormData({ ...formData, warehouse_id: e.target.value, point_of_sale_id: '' })}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="ID Point de Vente (optionnel)"
-                type="number"
-                value={formData.point_of_sale_id}
-                onChange={(e) => setFormData({ ...formData, point_of_sale_id: e.target.value, warehouse_id: '' })}
-              />
-            </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
