@@ -2,23 +2,24 @@
 import React, { useState } from 'react';
 import LogoToonaSHOP from '../assets/images/toonashop.png';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Box, 
-  Drawer, 
-  AppBar, 
-  Toolbar, 
-  List, 
-  Typography, 
-  Divider, 
-  IconButton, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
+import {
+  Box,
+  Drawer,
+  AppBar,
+  Toolbar,
+  List,
+  Typography,
+  Divider,
+  IconButton,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
   ListItemText,
   Avatar,
   InputBase,
   alpha,
-  styled
+  styled,
+  Badge
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -26,7 +27,6 @@ import {
   Business as BusinessIcon,
   Payment as PaymentIcon,
   Search as SearchIcon,
-  NotificationsNone as NotificationsIcon,
   HelpOutline as HelpIcon,
   Logout as LogoutIcon,
   Settings as SettingsIcon,
@@ -55,9 +55,12 @@ import {
   ReportProblem as ReportProblemIcon,
   Storefront as StorefrontIcon,
   AccountBalance as AccountBalanceIcon,
-  ManageAccounts as ManageAccountsIcon
+  ManageAccounts as ManageAccountsIcon,
+  MarkEmailUnread as MarkEmailUnreadIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useMessages } from '../context/MessagesContext';
+import NotificationDropdown from '../components/messages/NotificationDropdown';
 
 const drawerWidth = 260;
 
@@ -107,6 +110,7 @@ const DashboardLayout: React.FC = () => {
   const [statisticsOpen, setStatisticsOpen] = useState(false);
   const [imfOpen, setImfOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { unreadCount } = useMessages();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -165,9 +169,9 @@ const DashboardLayout: React.FC = () => {
     // },
     // { text: 'Partenariats', icon: <HandshakeIcon />, path: '/partnerships' },
     { text: 'Réclamations', icon: <ReportProblemIcon />, path: '/claims' },
-    { 
-      text: 'Gestion IMF', 
-      icon: <AccountBalanceIcon />, 
+    {
+      text: 'Gestion IMF',
+      icon: <AccountBalanceIcon />,
       hasSubmenu: true,
       submenu: [
         { text: 'IMF en Attente', path: '/imf/pending' },
@@ -176,6 +180,7 @@ const DashboardLayout: React.FC = () => {
       ]
     },
     { text: 'Utilisateurs', icon: <ManageAccountsIcon />, path: '/users' },
+    { text: 'Messages Site Web', icon: <MarkEmailUnreadIcon />, path: '/messages', badge: true },
     // { text: 'Points de Vente', icon: <StorefrontIcon />, path: '/points-of-sale' },
   ];
 
@@ -186,9 +191,9 @@ const DashboardLayout: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar 
-        position="fixed" 
-        sx={{ 
+      <AppBar
+        position="fixed"
+        sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
           bgcolor: 'background.paper',
           color: 'text.primary',
@@ -215,9 +220,7 @@ const DashboardLayout: React.FC = () => {
           </Search>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton size="large">
-              <NotificationsIcon />
-            </IconButton>
+            <NotificationDropdown />
             <IconButton size="large">
               <HelpIcon />
             </IconButton>
@@ -289,19 +292,25 @@ const DashboardLayout: React.FC = () => {
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 0, mr: open ? 3 : 'auto', justifyContent: 'center' }}>
-                    {item.icon}
+                    <Badge
+                      badgeContent={(item as any).badge ? unreadCount : 0}
+                      color="error"
+                      max={99}
+                    >
+                      {item.icon}
+                    </Badge>
                   </ListItemIcon>
                   <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} primaryTypographyProps={{ fontSize: 14, fontWeight: 500 }} />
                   {item.hasSubmenu && open && (
-                    item.text === 'Clients' 
+                    item.text === 'Clients'
                       ? (clientsOpen ? <ExpandLess /> : <ExpandMore />)
                       : item.text === 'Inventaire'
-                      ? (inventoryOpen ? <ExpandLess /> : <ExpandMore />)
-                      : item.text === 'Opérations'
-                      ? (operationsOpen ? <ExpandLess /> : <ExpandMore />)
-                      : item.text === 'Gestion IMF'
-                      ? (imfOpen ? <ExpandLess /> : <ExpandMore />)
-                      : (statisticsOpen ? <ExpandLess /> : <ExpandMore />)
+                        ? (inventoryOpen ? <ExpandLess /> : <ExpandMore />)
+                        : item.text === 'Opérations'
+                          ? (operationsOpen ? <ExpandLess /> : <ExpandMore />)
+                          : item.text === 'Gestion IMF'
+                            ? (imfOpen ? <ExpandLess /> : <ExpandMore />)
+                            : (statisticsOpen ? <ExpandLess /> : <ExpandMore />)
                   )}
                 </ListItemButton>
               </ListItem>
@@ -335,9 +344,9 @@ const DashboardLayout: React.FC = () => {
                           }
                         }}
                       >
-                        <ListItemText 
-                          primary={subItem.text} 
-                          primaryTypographyProps={{ fontSize: 13, fontWeight: 400 }} 
+                        <ListItemText
+                          primary={subItem.text}
+                          primaryTypographyProps={{ fontSize: 13, fontWeight: 400 }}
                         />
                       </ListItemButton>
                     </ListItem>

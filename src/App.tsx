@@ -38,10 +38,12 @@ import ImfApprovalPage from './pages/IMF/ImfApprovalPage';
 import UserManagement from './pages/Users/UserManagement';
 import Login from './pages/Auth/Login';
 import { SnackbarProvider } from './context/SnackbarContext';
+import { MessagesProvider } from './context/MessagesContext';
+import MessagesPage from './pages/Messages/MessagesPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  
+
   if (loading) {
     // Afficher un loader pendant la vérification
     return (
@@ -50,11 +52,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
       </div>
     );
   }
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
@@ -67,10 +69,12 @@ const App: React.FC = () => {
           <HashRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
-              
+
               <Route path="/" element={
                 <ProtectedRoute>
-                  <DashboardLayout />
+                  <MessagesProvider>
+                    <DashboardLayout />
+                  </MessagesProvider>
                 </ProtectedRoute>
               }>
                 <Route index element={<DashboardHome />} />
@@ -103,8 +107,9 @@ const App: React.FC = () => {
                 <Route path="imf/approved" element={<ImfApprovedGroups />} />
                 <Route path="imf/validate" element={<ImfApprovalPage />} />
                 <Route path="users" element={<UserManagement />} />
+                <Route path="messages" element={<MessagesPage />} />
               </Route>
-              
+
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </HashRouter>

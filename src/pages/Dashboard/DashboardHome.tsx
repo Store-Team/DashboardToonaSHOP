@@ -1,20 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
-import { 
-  Grid, 
-  Typography, 
-  Box, 
-  Skeleton, 
-  Card, 
-  CardContent, 
+import {
+  Grid,
+  Typography,
+  Box,
+  Skeleton,
+  Card,
+  CardContent,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Chip,
   Avatar,
   List,
@@ -23,18 +16,18 @@ import {
   ListItemText,
   Divider
 } from '@mui/material';
-import { 
-  Business, 
-  People, 
-  Subscriptions, 
+import {
+  Business,
+  People,
+  Subscriptions,
   History,
   TrendingUp,
   Warning,
-  PersonAdd,
   ArrowForward
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../../components/StatCard';
+import PaymentStatsPanel from '../../components/PaymentStatsPanel';
 import * as adminService from '../../services/adminService';
 import { useSnackbar } from '../../context/SnackbarContext';
 import { useAuth } from '../../context/AuthContext';
@@ -168,7 +161,7 @@ const DashboardHome: React.FC = () => {
   }, [isAuthenticated, showError]);
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('fr-FR', { 
+    return new Date(dateStr).toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -204,170 +197,57 @@ const DashboardHome: React.FC = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? <Skeleton variant="rectangular" height={160} /> : (
-            <StatCard 
-              title="Total Companies" 
-              value={stats?.totalGroups || 0} 
-              trend={stats?.trends?.groups || 0} 
-              icon={<Business />} 
+            <StatCard
+              title="Total Companies"
+              value={stats?.totalGroups || 0}
+              trend={stats?.trends?.groups || 0}
+              icon={<Business />}
             />
           )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? <Skeleton variant="rectangular" height={160} /> : (
-            <StatCard 
-              title="Global Users" 
-              value={stats?.totalUsers || 0} 
-              trend={stats?.trends?.users || 0} 
-              icon={<People />} 
+            <StatCard
+              title="Global Users"
+              value={stats?.totalUsers || 0}
+              trend={stats?.trends?.users || 0}
+              icon={<People />}
               color="#F4B23C"
             />
           )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? <Skeleton variant="rectangular" height={160} /> : (
-            <StatCard 
-              title="Active Subscriptions" 
-              value={stats?.activeSubscriptions || stats?.activeGroups || 0} 
-              trend={stats?.trends?.subs || 0} 
-              icon={<Subscriptions />} 
+            <StatCard
+              title="Active Subscriptions"
+              value={stats?.activeSubscriptions || stats?.activeGroups || 0}
+              trend={stats?.trends?.subs || 0}
+              icon={<Subscriptions />}
               color="#4FA3D1"
             />
           )}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           {loading ? <Skeleton variant="rectangular" height={160} /> : (
-            <StatCard 
-              title="Trial Groups" 
-              value={stats?.trialGroups || 0} 
-              trend={stats?.trends?.trials || 0} 
-              icon={<History />} 
+            <StatCard
+              title="Trial Groups"
+              value={stats?.trialGroups || 0}
+              trend={stats?.trends?.trials || 0}
+              icon={<History />}
               color="#E86868"
             />
           )}
         </Grid>
       </Grid>
 
-      {/* Payment Stats Section */}
-      <Grid container spacing={3} sx={{ mt: 1 }}>
-        <Grid item xs={12}>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-            Statistiques des Paiements de ce groupe
-          </Typography>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          {loadingPaymentStats ? <Skeleton variant="rectangular" height={160} /> : (
-            <StatCard 
-              title="Total Paiements" 
-              value={paymentStats?.totals?.total || 0} 
-              trend={0}
-              icon={<TrendingUp />} 
-              color="#4CAF50"
-            />
-          )}
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          {loadingPaymentStats ? <Skeleton variant="rectangular" height={160} /> : (
-            <StatCard 
-              title="Montant Total" 
-              value={`${(paymentStats?.totals?.total_amount || 0).toFixed(2)} USD`} 
-              trend={0}
-              icon={<TrendingUp />} 
-              color="#2196F3"
-            />
-          )}
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          {loadingPaymentStats ? <Skeleton variant="rectangular" height={160} /> : (
-            <StatCard 
-              title="Approuvés" 
-              value={paymentStats?.totals?.approved_count || 0} 
-              trend={0}
-              icon={<TrendingUp />} 
-              color="#4CAF50"
-            />
-          )}
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          {loadingPaymentStats ? <Skeleton variant="rectangular" height={160} /> : (
-            <StatCard 
-              title="Échoués" 
-              value={paymentStats?.totals?.failed_count || 0} 
-              trend={0}
-              icon={<Warning />} 
-              color="#F44336"
-            />
-          )}
-        </Grid>
-      </Grid>
-
-      {/* Payment Breakdown Section */}
-      {paymentStats && (
-        <Grid container spacing={3} sx={{ mt: 1 }}>
-          <Grid item xs={12}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-              Répartition des Paiements
-            </Typography>
-          </Grid>
-          
-          {/* By Provider Cards */}
-          
-
-          {/* By Status Cards */}
-          {paymentStats.by_status?.map((status, index) => (
-            <Grid item xs={12} sm={6} md={2} key={`status-${index}`}>
-              <Card sx={{ 
-              }}>
-                <CardContent>
-                  <Typography variant="caption" color="text.secondary">
-                    Status
-                  </Typography>
-                  <Typography variant="h6" sx={{ 
-                    fontWeight: 600, 
-                    mt: 0.5,
-                    textTransform: 'capitalize',
-                    color: status.status === 'approved' ? '#4CAF50' : 
-                           status.status === 'failed' ? '#F44336' : 
-                           '#FF9800'
-                  }}>
-                    {status.status}
-                  </Typography>
-                  <Typography variant="h5" sx={{ mt: 1 }}>
-                    {status.count}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    ${status.amount.toFixed(2)}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-          {paymentStats.by_provider?.slice(0, 3).map((provider, index) => (
-          <Grid item xs={12} sm={6} md={2} key={`provider-${index}`}>
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Provider
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 600, mt: 0.5 }}>
-                      {provider.provider}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      {provider.count} transactions
-                    </Typography>
-                    <Typography variant="h6" color="primary" sx={{ mt: 0.5 }}>
-                      ${provider.amount.toFixed(2)}
-                    </Typography>
-                  </Box>
-                  <TrendingUp sx={{ fontSize: 40, color: '#9C27B0', opacity: 0.3 }} />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-        </Grid>
-      )}
+      {/* Payment Stats Panel centralisé */}
+      <Box sx={{ mt: 3 }}>
+        <PaymentStatsPanel
+          paymentStats={paymentStats}
+          loading={loadingPaymentStats}
+          title="Statistiques des Paiements"
+        />
+      </Box>
 
       {/* Sections supplémentaires */}
       <Grid container spacing={3} sx={{ mt: 2 }}>
@@ -382,8 +262,8 @@ const DashboardHome: React.FC = () => {
                     Nouveaux groupes
                   </Typography>
                 </Box>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   endIcon={<ArrowForward />}
                   onClick={() => navigate('/groups')}
                 >
@@ -423,9 +303,9 @@ const DashboardHome: React.FC = () => {
                                 {group.email || 'Pas d\'email'}
                               </Typography>
                               <Box component="span" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
-                                <Chip 
-                                  label={`${group.user_count || 0} utilisateurs`} 
-                                  size="small" 
+                                <Chip
+                                  label={`${group.user_count || 0} utilisateurs`}
+                                  size="small"
                                   variant="outlined"
                                 />
                                 <Typography component="span" variant="caption" color="text.secondary">
@@ -456,8 +336,8 @@ const DashboardHome: React.FC = () => {
                     Abonnements expirant
                   </Typography>
                 </Box>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   endIcon={<ArrowForward />}
                   onClick={() => navigate('/payments')}
                 >
@@ -497,9 +377,9 @@ const DashboardHome: React.FC = () => {
                                 {group.email || 'Pas d\'email'}
                               </Typography>
                               <Box component="span" sx={{ display: 'flex', gap: 1, mt: 0.5, alignItems: 'center' }}>
-                                <Chip 
+                                <Chip
                                   label={`${Math.ceil((new Date(group.subscriptionEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} jours restants`}
-                                  size="small" 
+                                  size="small"
                                   color="warning"
                                   variant="outlined"
                                 />
