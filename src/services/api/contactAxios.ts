@@ -4,21 +4,26 @@ import axios, { AxiosError } from 'axios';
  * Isolated Axios instance for the Contact/Messages API.
  * This is a completely separate backend from the main ToonaSHOP API.
  *
- * Rules:
- *  - No auth token injection (public-facing API, no admin session)
- *  - No 401/403 auto-redirect (would conflict with admin auth flow)
- *  - Independent error handling
+ * ─── CORS strategy ──────────────────────────────────────────────────────────
+ * The API at https://website-api.toonashop.com already sets
+ *   Access-Control-Allow-Origin  for localhost:3000
+ * so we can call it directly from the browser without any proxy.
+ *
+ * The Vite proxy was causing HTTP 500 errors due to a protocol mismatch
+ * (HTTP/1.1 keep-alive from Vite ↔ HTTP/2 CDN on Hostinger).
+ * ────────────────────────────────────────────────────────────────────────────
  */
 
-const CONTACT_API_URL =
+const CONTACT_API_BASE =
     import.meta.env.VITE_CONTACT_API_URL || 'https://website-api.toonashop.com';
 
 const contactApi = axios.create({
-    baseURL: CONTACT_API_URL,
+    baseURL: CONTACT_API_BASE,
     headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
     },
-    timeout: 10000,
+    timeout: 15000,
 });
 
 // Request interceptor — log only in dev, no token injection

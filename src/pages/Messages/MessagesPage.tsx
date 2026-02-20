@@ -42,6 +42,17 @@ import {
     Email as EmailIcon,
     Close as CloseIcon,
     TrendingUp as SalesIcon,
+    Work as WorkIcon,
+    Public as PublicIcon,
+    ShoppingCart as OrdersIcon,
+    Storage as ERPIcon,
+    AccountCircle as AccountIcon,
+    CheckCircle as CheckCircleIcon,
+    Cancel as CancelIcon,
+    ContactMail as ContactMailIcon,
+    HelpOutline as ReasonIcon,
+    CalendarToday as DateIcon,
+    SendOutlined as EmailSentIcon,
 } from '@mui/icons-material';
 import {
     getContacts,
@@ -123,8 +134,8 @@ const MessagesPage: React.FC = () => {
         return (
             c.fullName.toLowerCase().includes(q) ||
             c.email.toLowerCase().includes(q) ||
-            c.company.toLowerCase().includes(q) ||
-            c.phone.includes(q)
+            (c.company ?? '').toLowerCase().includes(q) ||
+            (c.phone ?? '').includes(q)
         );
     });
 
@@ -223,6 +234,7 @@ const MessagesPage: React.FC = () => {
                             trend={0}
                             icon={<SalesIcon />}
                             color="#10B981"
+
                         />
                     )}
                 </Grid>
@@ -429,29 +441,50 @@ const MessagesPage: React.FC = () => {
             <Dialog
                 open={!!selectedContact}
                 onClose={closeDetail}
-                maxWidth="sm"
+                maxWidth="md"
                 fullWidth
                 PaperProps={{ sx: { borderRadius: 3 } }}
             >
                 {selectedContact && (() => {
                     const cfg = TYPE_CONFIG[selectedContact.type];
+                    const isSupport = selectedContact.type === 'support';
+                    const s = selectedContact as any; // typed access to discriminated union fields
                     return (
                         <>
-                            <DialogTitle sx={{ pb: 1 }}>
+                            {/* ── Header ── */}
+                            <DialogTitle sx={{ pb: 1.5 }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <Avatar sx={{ bgcolor: cfg.bg, color: cfg.color, width: 44, height: 44 }}>
+                                        <Avatar sx={{ bgcolor: cfg.bg, color: cfg.color, width: 52, height: 52, fontSize: 22, fontWeight: 700 }}>
                                             {selectedContact.fullName.charAt(0).toUpperCase()}
                                         </Avatar>
                                         <Box>
                                             <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                                                 {selectedContact.fullName}
                                             </Typography>
-                                            <Chip
-                                                label={cfg.label}
-                                                size="small"
-                                                sx={{ bgcolor: cfg.bg, color: cfg.color, fontWeight: 700, fontSize: 11, height: 20, mt: 0.5 }}
-                                            />
+                                            <Box sx={{ display: 'flex', gap: 1, mt: 0.7, flexWrap: 'wrap' }}>
+                                                <Chip
+                                                    label={cfg.label}
+                                                    size="small"
+                                                    sx={{ bgcolor: cfg.bg, color: cfg.color, fontWeight: 700, fontSize: 11, height: 20 }}
+                                                />
+                                                <Chip
+                                                    icon={<EmailSentIcon sx={{ fontSize: '13px !important' }} />}
+                                                    label={selectedContact.emailSent ? 'Email envoyé' : 'Email non envoyé'}
+                                                    size="small"
+                                                    color={selectedContact.emailSent ? 'success' : 'default'}
+                                                    variant="outlined"
+                                                    sx={{ fontSize: 11, height: 20 }}
+                                                />
+                                                <Chip
+                                                    icon={<WhatsAppIcon sx={{ fontSize: '13px !important', color: '#25D366 !important' }} />}
+                                                    label={selectedContact.whatsappSent ? 'WhatsApp envoyé' : 'WhatsApp non envoyé'}
+                                                    size="small"
+                                                    color={selectedContact.whatsappSent ? 'success' : 'default'}
+                                                    variant="outlined"
+                                                    sx={{ fontSize: 11, height: 20 }}
+                                                />
+                                            </Box>
                                         </Box>
                                     </Box>
                                     <IconButton onClick={closeDetail} size="small">
@@ -462,34 +495,32 @@ const MessagesPage: React.FC = () => {
 
                             <Divider />
 
-                            <DialogContent sx={{ pt: 2.5 }}>
-                                {/* Contact fields */}
-                                <Grid container spacing={2} sx={{ mb: 2.5 }}>
+                            <DialogContent sx={{ pt: 2.5, pb: 2 }}>
+
+                                {/* ── Section : Coordonnées de base ── */}
+                                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1 }}>
+                                    Coordonnées
+                                </Typography>
+                                <Grid container spacing={2} sx={{ mt: 0.5, mb: 2.5 }}>
                                     <Grid item xs={12} sm={6}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <BusinessIcon fontSize="small" color="action" />
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                            <BusinessIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Entreprise
-                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">Entreprise</Typography>
                                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                    {selectedContact.company}
+                                                    {selectedContact.company || <span style={{ color: '#aaa', fontStyle: 'italic' }}>—</span>}
                                                 </Typography>
                                             </Box>
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <EmailIcon fontSize="small" color="action" />
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                            <EmailIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Email
-                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">Email principal</Typography>
                                                 <Typography
-                                                    variant="body2"
-                                                    sx={{ fontWeight: 600 }}
-                                                    component="a"
-                                                    href={`mailto:${selectedContact.email}`}
+                                                    variant="body2" sx={{ fontWeight: 600 }}
+                                                    component="a" href={`mailto:${selectedContact.email}`}
                                                     style={{ color: 'inherit', textDecoration: 'none' }}
                                                 >
                                                     {selectedContact.email}
@@ -498,40 +529,149 @@ const MessagesPage: React.FC = () => {
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <PhoneIcon fontSize="small" color="action" />
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                            <PhoneIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Téléphone
-                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">Téléphone</Typography>
                                                 <Typography
-                                                    variant="body2"
-                                                    sx={{ fontWeight: 600 }}
-                                                    component="a"
-                                                    href={`tel:${selectedContact.phone}`}
+                                                    variant="body2" sx={{ fontWeight: 600 }}
+                                                    component="a" href={`tel:${selectedContact.phone}`}
                                                     style={{ color: 'inherit', textDecoration: 'none' }}
                                                 >
-                                                    {selectedContact.phone}
+                                                    {selectedContact.phone || <span style={{ color: '#aaa', fontStyle: 'italic' }}>—</span>}
                                                 </Typography>
                                             </Box>
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <Box>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Reçu le
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                {formatDate(selectedContact.createdAt)}
-                                            </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                            <DateIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Reçu le</Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                    {formatDate(selectedContact.createdAt)}
+                                                </Typography>
+                                            </Box>
                                         </Box>
                                     </Grid>
                                 </Grid>
 
                                 <Divider sx={{ mb: 2 }} />
 
-                                {/* Message body */}
-                                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700 }}>
+                                {/* ── Section spécifique : SUPPORT ── */}
+                                {isSupport && (
+                                    <>
+                                        <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1 }}>
+                                            Détails Support
+                                        </Typography>
+                                        <Grid container spacing={2} sx={{ mt: 0.5, mb: 2.5 }}>
+                                            <Grid item xs={12}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                    <ReasonIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
+                                                    <Box>
+                                                        <Typography variant="caption" color="text.secondary">Raison du contact</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            {s.contactReason
+                                                                ? s.contactReason.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+                                                                : <span style={{ color: '#aaa', fontStyle: 'italic' }}>Non précisée</span>}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                        </Grid>
+                                        <Divider sx={{ mb: 2 }} />
+                                    </>
+                                )}
+
+                                {/* ── Section spécifique : SALES ── */}
+                                {!isSupport && (
+                                    <>
+                                        <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1 }}>
+                                            étails Commercial
+                                        </Typography>
+                                        <Grid container spacing={2} sx={{ mt: 0.5, mb: 2.5 }}>
+                                            <Grid item xs={12} sm={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                    <WorkIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
+                                                    <Box>
+                                                        <Typography variant="caption" color="text.secondary">Titre / Fonction</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            {s.jobTitle || <span style={{ color: '#aaa', fontStyle: 'italic' }}>—</span>}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                    <ContactMailIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
+                                                    <Box>
+                                                        <Typography variant="caption" color="text.secondary">Email professionnel</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}
+                                                            component="a" href={s.professionalEmail ? `mailto:${s.professionalEmail}` : undefined}
+                                                            style={{ color: 'inherit', textDecoration: 'none' }}
+                                                        >
+                                                            {s.professionalEmail || <span style={{ color: '#aaa', fontStyle: 'italic' }}>—</span>}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                    <PublicIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
+                                                    <Box>
+                                                        <Typography variant="caption" color="text.secondary">Pays</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            {s.country || <span style={{ color: '#aaa', fontStyle: 'italic' }}>—</span>}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                    <OrdersIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
+                                                    <Box>
+                                                        <Typography variant="caption" color="text.secondary">Commandes / mois</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            {s.ordersPerMonth || <span style={{ color: '#aaa', fontStyle: 'italic' }}>—</span>}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                    <ERPIcon fontSize="small" color="action" sx={{ mt: 0.2 }} />
+                                                    <Box>
+                                                        <Typography variant="caption" color="text.secondary">ERP actuel</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            {s.currentERP || <span style={{ color: '#aaa', fontStyle: 'italic' }}>Aucun / Non précisé</span>}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                            <Grid item xs={12} sm={6}>
+                                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                    {s.hasExistingAccount
+                                                        ? <CheckCircleIcon fontSize="small" sx={{ color: '#16a34a', mt: 0.2 }} />
+                                                        : <CancelIcon fontSize="small" sx={{ color: '#dc2626', mt: 0.2 }} />
+                                                    }
+                                                    <Box>
+                                                        <Typography variant="caption" color="text.secondary">Compte ToonaShop existant</Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                            {s.hasExistingAccount === null
+                                                                ? <span style={{ color: '#aaa', fontStyle: 'italic' }}>—</span>
+                                                                : s.hasExistingAccount ? 'Oui' : 'Non'
+                                                            }
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
+                                            </Grid>
+                                        </Grid>
+                                        <Divider sx={{ mb: 2 }} />
+                                    </>
+                                )}
+
+                                {/* ── Message body ── */}
+                                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1 }}>
                                     Message
                                 </Typography>
                                 <Box
@@ -545,15 +685,16 @@ const MessagesPage: React.FC = () => {
                                         whiteSpace: 'pre-wrap',
                                     }}
                                 >
-                                    <Typography variant="body2" sx={{ lineHeight: 1.7 }}>
+                                    <Typography variant="body2" sx={{ lineHeight: 1.8 }}>
                                         {selectedContact.message}
                                     </Typography>
                                 </Box>
+
                             </DialogContent>
 
                             <Divider />
 
-                            <DialogActions sx={{ p: 2, gap: 1 }}>
+                            <DialogActions sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
                                 <Button onClick={closeDetail} variant="outlined" size="small">
                                     Fermer
                                 </Button>

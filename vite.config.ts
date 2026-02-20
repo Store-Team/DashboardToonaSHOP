@@ -37,6 +37,24 @@ export default defineConfig(({ mode }) => {
               console.log('Received Response:', proxyRes.statusCode, req.url);
             });
           }
+        },
+        // ─── Contact/Messages API proxy (évite les erreurs CORS) ────────────
+        '/contact-api': {
+          target: 'https://website-api.toonashop.com',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/contact-api/, ''),
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log('[ContactProxy] error', err);
+            });
+            proxy.on('proxyReq', (_proxyReq, req, _res) => {
+              console.log('[ContactProxy] →', req.method, req.url);
+            });
+            proxy.on('proxyRes', (proxyRes, req, _res) => {
+              console.log('[ContactProxy] ←', proxyRes.statusCode, req.url);
+            });
+          }
         }
       }
     },
